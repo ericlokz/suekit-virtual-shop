@@ -1,7 +1,7 @@
-// A tiny neighbourhood flower shop and project workshop, built from geometry and canvas labels.
+// A tiny neighbourhood flower shop and cafe, built from geometry and canvas labels.
 export function buildHardware(ctx){
   const {THREE,scene,mat,box,cyl,tube,panel,label,glow,rng}=ctx;
-  const group=new THREE.Group();group.name='OUGAONE flower shop and project workshop';scene.add(group);
+  const group=new THREE.Group();group.name='OUGAONE flower shop and cafe';scene.add(group);
   const lights=[],glowMaterials=[],unlitPanels=[],glassStreakMaterials=[],doors=[],lampMeshes=[];
   const cream=mat('#d8cbb7'),creamLight=mat('#eadcc3'),plasterShade=mat('#b6a895');
   const burgundy=mat('#596f62'),redShade=mat('#465a50'),brickRed=mat('#78917a');
@@ -46,7 +46,7 @@ export function buildHardware(ctx){
   B(.61,.05,.53,.64,5.56,-2.90,mat('#8b8378'));
   B(.07,.025,.20,.80,5.604,-2.90,bronze,false);
 
-  // Cream upstairs front: broad workshop window with bronze mullions.
+  // Cream upstairs front: broad cafe window with bronze mullions.
   B(.29,2.26,.24,-3.66,4.18,.57,cream);
   B(1.19,2.26,.24,1.02,4.18,.57,cream);
   B(4.12,.38,.24,-1.51,3.23,.57,cream);
@@ -174,38 +174,7 @@ export function buildHardware(ctx){
   });
   L(1.05,.29,1.746,2.91,-2.11,'OUGAONE','#ddc9ac','#893f48',{rotY:Math.PI/2});
 
-  // Hardware stock uses real silhouettes, repeated small packages are instanced.
-  const matrices=new Map(),instances=[];
-  function stock(w,h,d,x,y,z,m,rz=0){
-    const key=[w,h,d,m.uuid].join('|');if(!matrices.has(key))matrices.set(key,{geometry:new THREE.BoxGeometry(w,h,d),material:m,list:[]});
-    const o=new THREE.Object3D();o.position.set(x,y,z);o.rotation.z=rz;o.updateMatrix();matrices.get(key).list.push(o.matrix.clone());
-  }
-  function ring(x,y,z,r,thick,material,parent=group,arc=Math.PI*2){
-    const o=new THREE.Mesh(new THREE.TorusGeometry(r,thick,6,18,arc),material);o.position.set(x,y,z);parent.add(o);return o;
-  }
-  function wrench(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    B(.065,.48,.038,0,0,0,steel,false,g);
-    const head=ring(0,.255,.01,.115,.034,steel,g,Math.PI*1.60);head.rotation.z=Math.PI*.20;
-    ring(0,-.245,.012,.068,.029,steel,g);
-    B(.017,.26,.040,0,-.02,.009,metal,false,g);return g;
-  }
-  function hammer(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    B(.061,.49,.055,0,0,0,mat('#a67753'),false,g);B(.065,.16,.067,0,-.15,0,mat('#714c3f'),false,g);
-    B(.24,.091,.085,-.018,.245,0,steel,true,g);B(.067,.12,.076,-.16,.28,0,metal,false,g);return g;
-  }
-  function pliers(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    const red=mat('#a74d44');
-    for(const s of [-1,1]){const h=B(.053,.27,.055,s*.058,-.105,0,red,false,g);h.rotation.z=s*-.18;const a=B(.045,.22,.039,s*.044,.11,0,steel,false,g);a.rotation.z=s*.25;}
-    C(.052,.052,.06,0,.025,0,metal,10,false,g).rotation.x=Math.PI/2;return g;
-  }
-  function screwdriver(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    B(.060,.20,.051,0,-.13,0,mat('#d99d52'),false,g);B(.022,.31,.024,0,.12,0,steel,false,g);return g;
-  }
-  // A florist replaces the ground-floor tool stock while the upper workshop stays intact.
+  // The ground floor is a flower shop; the upper floor is a neighbourhood cafe.
   const leaf=mat('#687c5d'),stem=mat('#58745e');
   const flowerColors=['#d97872','#e9c16e','#df9baa','#eee5d0','#9d8dbb','#e98e62'].map(c=>mat(c));
   const potColors=['#b87658','#d3c4a8','#718779','#9c8065'].map(c=>mat(c));
@@ -278,26 +247,46 @@ export function buildHardware(ctx){
     mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
   }
 
-  // Upstairs workshop: oversized wrench on display, cabinet, workbench and crates.
-  B(1.40,.68,.56,-2.48,3.46,-.29,wood);B(1.49,.075,.64,-2.48,3.838,-.29,shelf);
-  wrench(-2.10,4.13,.20,1.40,.30);hammer(-1.61,4.03,-.33,1.05,-.31);
-  B(.57,.52,.66,-.59,3.44,-.22,mat('#b29472'));B(.51,.48,.65,.03,3.42,-.22,mat('#a58c71'));
-  B(.62,.05,.70,-.59,3.72,-.22,wood);B(.56,.05,.69,.03,3.68,-.22,wood);
-  for(let i=0;i<4;i++)stock(.038,.40,.012,-.82+i*.14,3.45,.121,mat('#836e58'));
-  // An upstairs rack sits behind the freestanding display wrench.
-  const upperRack=new THREE.Group();group.add(upperRack);
-  for(const x of [-2.85,-.83])B(.059,1.50,.46,x,3.80,-2.97,wood,false,upperRack);
-  for(const y of [3.10,3.55,4.02,4.49])B(2.06,.057,.48,-1.84,y,-2.97,shelf,true,upperRack);
-  for(let row=0;row<3;row++)for(let i=0;i<7;i++){
-    const x=-2.69+i*.28,y=3.28+row*.47,z=-2.86;
-    stock(.22,.29,.25,x,y,z,mat(['#b5956d','#a7735c','#88928a'][(row+i)%3]));stock(.12,.056,.006,x,y,-2.731,paper);
+  // Upstairs cafe: a warm service counter, espresso station, pastry case and two window tables.
+  B(2.72,.62,.62,-1.42,3.45,-2.98,wood);
+  B(2.80,.075,.69,-1.42,3.80,-2.98,mat('#d7c4a2'));
+  B(.62,.39,.40,-2.28,4.02,-2.83,mat('#596d62'));
+  B(.47,.10,.32,-2.28,4.265,-2.83,bronze);
+  B(.33,.16,.18,-2.28,4.39,-2.82,mat('#b6a789'));
+  C(.09,.09,.15,-2.13,4.48,-2.80,bronze,12,true);
+  for(const x of [-2.49,-2.28,-2.07])C(.026,.026,.16,x,4.22,-2.57,metal,10);
+  // Pastry glass and neat rows of baked goods sit beside the coffee machine.
+  B(.70,.07,.34,-.72,3.96,-2.79,wood);
+  B(.68,.32,.025,-.72,4.15,-2.78,glass,false);
+  B(.68,.025,.34,-.72,4.32,-2.79,glass,false);
+  for(const x of [-.94,-.72,-.50]){
+    C(.075,.075,.10,x,4.035,-2.72,mat('#c49365'),9);
+    C(.065,.065,.035,x,4.104,-2.72,mat('#e6c88f'),9);
   }
-  B(.83,1.27,.48,.73,3.73,-2.80,mat('#8d9489'));
-  for(const y of [3.47,4.07]){B(.035,.38,.026,.34,y,-2.55,bronze,false);B(.031,.07,.06,.51,y,-2.53,metal,false);}
-  B(1.52,.07,.67,.69,3.82,-1.52,wood);for(const z of [-1.76,-1.27])B(.07,.68,.07,1.27,3.43,z,bronze,false);
-  B(.44,.20,.31,.68,3.965,-1.52,mat('#9b7862'));B(.14,.04,.05,.68,4.084,-1.52,bronze,false);
-  ring(.99,4.04,-1.63,.13,.023,mat('#776b52'));ring(.99,4.04,-1.63,.10,.020,mat('#776b52'));
-  L(.72,.40,-.18,4.42,-3.40,'OUGAONE\nPROJECT LAB','#d8c3a1','#93544a');
+  L(1.20,.26,-1.08,4.67,.53,'桂香咖啡 · COFFEE','#53685c','#f1e5ce');
+  L(.77,.34,.54,4.38,-2.77,'手冲咖啡\n每日烘焙','#475b50','#f2e5cb');
+
+  function cafeTable(x,z){
+    B(.78,.075,.68,x,3.77,z,mat('#c49e73'));
+    C(.045,.045,.64,x,3.43,z,bronze,10);
+    B(.05,.06,.57,x,3.13,z,bronze,false);
+    for(const side of [-1,1]){
+      B(.42,.075,.40,x+side*.61,3.37,z,wood);
+      for(const dx of [-.15,.15])B(.055,.46,.055,x+side*.61+dx,3.10,z+.16,bronze,false);
+      B(.40,.42,.065,x+side*.61,3.62,z+.18,wood);
+    }
+    C(.075,.025,.04,x-.12,3.83,z,mat('#eee0c4'),10);
+    C(.075,.025,.04,x+.12,3.83,z,mat('#eee0c4'),10);
+  }
+  cafeTable(-1.86,-1.55);
+  cafeTable(.12,-1.30);
+  // A potted leafy plant softens the seating corner in the existing muted palette.
+  C(.18,.24,.26,1.04,3.18,-2.48,mat('#b67f63'),10,true);
+  C(.185,.185,.035,1.04,3.325,-2.48,mat('#806d55'),10);
+  for(const [x,y,z,sx,sy,sz] of [[.89,3.62,-2.48,.12,.34,.08],[1.18,3.59,-2.48,.11,.30,.08],[1.03,3.76,-2.48,.09,.31,.08],[.85,3.82,-2.48,.10,.24,.07]]){
+    const leafMesh=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),leaf);
+    leafMesh.position.set(x,y,z);leafMesh.scale.set(sx,sy,sz);group.add(leafMesh);
+  }
 
   // Ceiling fixture meshes and all artificial emission are returned for time switching.
   const warmLamp=emissive('#ffe0a4',1.15);
@@ -325,9 +314,6 @@ export function buildHardware(ctx){
     c.fillStyle='#92464a';c.font=`800 ${H*.17}px Arial`;c.textAlign='center';c.fillText('OUGAONE',W/2,H*.23);
     for(let i=0;i<3;i++){c.fillStyle=['#b8b695','#bc9277','#9da69d'][i];c.fillRect(W*(.07+i*.31),H*.34,W*.24,H*.55);c.fillStyle='#756853';for(let r=0;r<5;r++)c.fillRect(W*(.09+i*.31),H*(.42+r*.08),W*.19,H*.017);}
   },{rotY:-Math.PI/2});
-  for(const batch of matrices.values()){
-    const mesh=new THREE.InstancedMesh(batch.geometry,batch.material,batch.list.length);batch.list.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);instances.push(mesh);
-  }
   const growthFloors=[];
   const featureUpgrades=[];
   let growthLevel=0;

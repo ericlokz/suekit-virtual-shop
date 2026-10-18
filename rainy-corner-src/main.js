@@ -4,7 +4,7 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { buildHardware } from './hardware.js';
 import { buildSeasons } from './seasons.js';
 import { buildStreet } from './street.js';
-import { buildVisitors } from './visitors.js';
+import { buildVisitors, pedestriansForCodeChanges } from './visitors.js';
 import { mountMetricsPanel } from './metrics-panel.js';
 import { projectMetrics, loadProjectMetrics } from './metrics-data.js';
 
@@ -176,13 +176,15 @@ hardware.setFeatureProgress(0);
 ctx.awning=hardware.awning;
 const street=buildStreet(ctx);
 const seasons=buildSeasons(ctx);
-let visitors=buildVisitors(ctx, { visitors: 0 });
+let visitors=buildVisitors(ctx, { visitors: 0, sourceMode: 'daily-code-churn', changedLines: 0 });
 let metricsTimer;
 async function updateProjectMetrics() {
   clearTimeout(metricsTimer);
   try {
     const data = await loadProjectMetrics();
     metricsPanel.update(data);
+    const activeTasks=Array.isArray(data.plan?.groups)?data.plan.groups.flatMap(group=>group.tasks||[]).filter(task=>task.status==='进行中'):null;
+    street.setActiveTasks(activeTasks);
     if (Number.isSafeInteger(data.plan?.summary?.total) && data.plan.summary.total > 0) {
       const progress = 100 * data.plan.summary.completed / data.plan.summary.total;
       buildingHeight = hardware.setProgress(progress);
@@ -194,11 +196,17 @@ async function updateProjectMetrics() {
       resize();
       controls.update();
     }
-    const visitorsCount = Math.min(16, data.traffic?.visitors || 0);
-    if (visitorsCount !== visitors.count) {
-      scene.remove(visitors.group);
-      visitors.group.clear();
-      visitors=buildVisitors(ctx, { visitors: visitorsCount });
+    const today = new Date().toISOString().slice(0, 10);
+    const dailyCode = data.code?.daily?.find(day => day.date === today);
+    if (dailyCode) {
+      const additions=dailyCode.additions||0,deletions=dailyCode.deletions||0;
+      const changedLines=additions+deletions;
+      const pedestriansCount=pedestriansForCodeChanges(additions,deletions);
+      if (pedestriansCount !== visitors.count) {
+        scene.remove(visitors.group);
+        visitors.group.clear();
+        visitors=buildVisitors(ctx, { visitors: pedestriansCount, sourceMode: 'daily-code-churn', changedLines });
+      } else visitors.traffic={visitors:pedestriansCount,sourceMode:'daily-code-churn',changedLines};
       recordState();
     }
     metricsTimer = setTimeout(updateProjectMetrics, 60000);
@@ -267,7 +275,8 @@ function recordState(){
   let objects=0;scene.traverse(()=>objects++);root.dataset.sceneObjects=String(objects);
   root.dataset.doorAngles=(hardware.doors||[]).map(d=>d.rotation.y.toFixed(3)).join(',');
   root.dataset.customerCount=String(visitors.count);
-  root.dataset.visitorCount=String(visitors.traffic.visitors ?? '');
+  root.dataset.visitorCount=String(visitors.count);
+  root.dataset.codeLinesChanged=String(visitors.traffic.changedLines ?? 0);
   root.dataset.customerSource=visitors.traffic.sourceMode;
   root.dataset.customerActivities=visitors.people.map(p=>p.state).join(',');
   root.dataset.customerPositions=visitors.people.map(p=>p.group.position.toArray().map(v=>v.toFixed(3)).join(',')).join(';');
