@@ -40,3 +40,16 @@ services:
       timeout: 5s
       retries: 3
     restart: unless-stopped
+
+  frpc:
+    image: ougaone-frpc:0.71.0
+    environment:
+      FRP_SERVER_ADDR: ${FRP_SERVER_ADDR:?Set FRP_SERVER_ADDR}
+      FRP_TOKEN: ${FRP_TOKEN:?Set FRP_TOKEN}
+      FRP_REMOTE_PORT: ${FRP_REMOTE_PORT:-13182}
+    volumes:
+      - ./deploy/frpc-growth.toml:/etc/frp/frpc.toml:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
