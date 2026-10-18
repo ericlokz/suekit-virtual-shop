@@ -1,5 +1,6 @@
 services:
   api:
+    image: ougaone-growth-showcase-api:${SHOWCASE_TAG:-local}
     build:
       context: .
       dockerfile: analytics-service/Dockerfile
@@ -21,6 +22,7 @@ services:
     restart: unless-stopped
 
   web:
+    image: ougaone-growth-showcase-web:${SHOWCASE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile.web
