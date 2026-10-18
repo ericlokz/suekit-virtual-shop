@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: analytics-service/Dockerfile
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8787
+      PLAN_API_URL: ${PLAN_API_URL:?Set the OUGAONE plan API URL}
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-ericlokz/OUGAONE}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      UMAMI_BASE_URL: ${UMAMI_BASE_URL:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+      UMAMI_API_KEY: ${UMAMI_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
+        UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${SHOWCASE_PORT:?Set SHOWCASE_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped

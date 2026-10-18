@@ -1,14 +1,13 @@
 const DAY = 86400000;
 const CACHE_KEY = 'project-metrics-v1';
 const STATUS_KEYS = { '待开始': 'notStarted', '进行中': 'inProgress', '待验收': 'awaitingReview', '完成': 'completed', '阻塞': 'blocked' };
-const RAW_PLAN_URL = 'https://raw.githubusercontent.com/ericlokz/OUGAONE/main/docs/PLAN.md';
 const SOURCE_PATHS = ['apps/web/', 'apps/api/'];
 
 function cells(line) {
   return line.trim().slice(1, -1).split('|').map((value) => value.trim());
 }
 
-function parsePlan(markdown, updatedAt) {
+export function parsePlan(markdown, updatedAt) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n');
   const summary = { total: 0, notStarted: 0, inProgress: 0, awaitingReview: 0, completed: 0, blocked: 0 };
   const groups = [];
@@ -55,7 +54,7 @@ function parsePlan(markdown, updatedAt) {
   return { updatedAt, summary, groups, candidateCount, features: { total: featureCount, completed: completedFeatureCount } };
 }
 
-function aggregatePlan(value, updatedAt) {
+export function aggregatePlan(value, updatedAt) {
   if (!value?.summary || !Array.isArray(value.groups) || !Array.isArray(value.candidates)) throw new Error('计划 API 响应格式不匹配');
   const summary = value.summary;
   for (const key of ['total', ...Object.values(STATUS_KEYS)]) {
@@ -81,7 +80,8 @@ function aggregatePlan(value, updatedAt) {
 }
 
 async function readPlan(env, fetcher = fetch) {
-  const url = env.PLAN_API_URL || env.PLAN_SOURCE_URL || RAW_PLAN_URL;
+  const url = env.PLAN_API_URL || env.PLAN_SOURCE_URL;
+  if (!url) throw new Error('请配置 OUGAONE 的 PLAN_API_URL（/api/plan）');
   const cacheKey = new Request('https://plan-cache.invalid/' + encodeURIComponent(url));
   const cache = caches.default;
   const cached = await cache.match(cacheKey);
@@ -110,7 +110,7 @@ async function githubJson(path, env, fetcher) {
   return response.json();
 }
 
-async function loadCode(env, now, fetcher = fetch) {
+export async function loadCode(env, now, fetcher = fetch) {
   const repository = env.GITHUB_REPOSITORY || 'ericlokz/OUGAONE';
   const prefix = '/repos/' + repository;
   const repo = await githubJson(prefix, env, fetcher);
@@ -152,7 +152,7 @@ async function loadCode(env, now, fetcher = fetch) {
   };
 }
 
-async function loadTraffic(env, now, fetcher = fetch) {
+export async function loadTraffic(env, now, fetcher = fetch) {
   if (!env.UMAMI_BASE_URL || !env.UMAMI_WEBSITE_ID || !env.UMAMI_API_KEY) throw new Error('Umami 尚未配置');
   const base = env.UMAMI_BASE_URL.replace(/\/$/, '');
   const startAt = now - 30 * DAY;

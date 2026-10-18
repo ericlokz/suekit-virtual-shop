@@ -1,7 +1,9 @@
-# OUGAONE 项目数据 Worker
+# OUGAONE 展示页数据服务
 
-Worker 只负责向独立展示页提供聚合项目数据。计划源默认是 OUGAONE 主仓库 `docs/PLAN.md`，被访问时自动读取并缓存 30 秒；GitHub 代码指标每日更新；自托管 Umami 汇总每 5 分钟更新。
+NAS 部署使用 `server.mjs` 和仓库根目录的 `compose.nas.yml`。服务在 NAS 内部读取 OUGAONE `GET /api/plan`（每 30 秒）、GitHub 源码统计（每日）和自托管 Umami 汇总（每 5 分钟），只向展示页返回聚合结果。
 
-部署前先创建 Cloudflare KV namespace，并把 namespace ID 写入 `wrangler.jsonc`。按需要配置 `GITHUB_REPOSITORY`、`PLAN_SOURCE_URL`、`PUBLIC_SITE_ORIGIN`、`UMAMI_BASE_URL` 和 `UMAMI_WEBSITE_ID`。Umami API 凭据使用 `wrangler secret put UMAMI_API_KEY` 设置；公开仓库可选 `GITHUB_TOKEN` 以提高 GitHub API 限额。
+- `PLAN_API_URL` 必须指向 NAS 数据容器可访问的 OUGAONE `/api/plan` 完整 URL。
+- `GITHUB_TOKEN` 用于私有仓库读取，只需只读权限；仅保存在 NAS 本地 `.env` 文件。
+- `UMAMI_BASE_URL`、`UMAMI_WEBSITE_ID`、`UMAMI_API_KEY` 用于访问统计；留空时显示未接入。
 
-发布 Worker 后，将其 `/project.json` URL 配置为静态页构建变量 `PROJECT_DATA_URL`。没有 Umami 配置时 Worker 会明确返回访问数据不可用，不会产生模拟访问量。
+不要把令牌、密码或 Umami API key 提交到仓库。数据 API 不发布宿主机端口，只由展示页容器通过内部网络访问。
