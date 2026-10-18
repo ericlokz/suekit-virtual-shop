@@ -1,10 +1,10 @@
-// A tiny neighbourhood hardware shop, built entirely from geometry and canvas labels.
+// A tiny neighbourhood flower shop and cafe, built from geometry and canvas labels.
 export function buildHardware(ctx){
   const {THREE,scene,mat,box,cyl,tube,panel,label,glow,rng}=ctx;
-  const group=new THREE.Group();group.name='OUGAONE hardware shop';scene.add(group);
+  const group=new THREE.Group();group.name='OUGAONE flower shop and cafe';scene.add(group);
   const lights=[],glowMaterials=[],unlitPanels=[],glassStreakMaterials=[],doors=[],lampMeshes=[];
   const cream=mat('#d8cbb7'),creamLight=mat('#eadcc3'),plasterShade=mat('#b6a895');
-  const burgundy=mat('#793c43'),redShade=mat('#62333b'),brickRed=mat('#8c4850');
+  const burgundy=mat('#596f62'),redShade=mat('#465a50'),brickRed=mat('#78917a');
   const bronze=mat('#443d3a'),metal=mat('#9c9b95'),steel=mat('#b6b4a5'),wood=mat('#b69c76');
   const dark=mat('#363d43'),shelf=mat('#c3b79b'),paper=mat('#e7ddc2');
   const B=(w,h,d,x,y,z,m,outline=true,parent=group)=>box(w,h,d,x,y,z,m,outline,parent);
@@ -46,7 +46,7 @@ export function buildHardware(ctx){
   B(.61,.05,.53,.64,5.56,-2.90,mat('#8b8378'));
   B(.07,.025,.20,.80,5.604,-2.90,bronze,false);
 
-  // Cream upstairs front: broad workshop window with bronze mullions.
+  // Cream upstairs front: broad cafe window with bronze mullions.
   B(.29,2.26,.24,-3.66,4.18,.57,cream);
   B(1.19,2.26,.24,1.02,4.18,.57,cream);
   B(4.12,.38,.24,-1.51,3.23,.57,cream);
@@ -135,7 +135,7 @@ export function buildHardware(ctx){
   // A permanent striped rain awning shelters the outward-swinging entrance doors.
   const awning={x:-.105,width:2.35,zBack:.86,zFront:1.76,yBack:2.85,yFront:2.73};
   const awningGroup=new THREE.Group();awningGroup.name='entrance-red-white-awning';group.add(awningGroup);
-  const stripeMaterials=[mat('#a4484c'),mat('#eee2c8')];
+  const stripeMaterials=[mat('#718976'),mat('#eee2c8')];
   const awningAngle=Math.atan2(awning.yBack-awning.yFront,awning.zFront-awning.zBack);
   const awningDepth=Math.hypot(awning.zFront-awning.zBack,awning.yBack-awning.yFront);
   const stripeWidth=awning.width/10;
@@ -174,123 +174,119 @@ export function buildHardware(ctx){
   });
   L(1.05,.29,1.746,2.91,-2.11,'OUGAONE','#ddc9ac','#893f48',{rotY:Math.PI/2});
 
-  // Hardware stock uses real silhouettes, repeated small packages are instanced.
-  const matrices=new Map(),instances=[];
-  function stock(w,h,d,x,y,z,m,rz=0){
-    const key=[w,h,d,m.uuid].join('|');if(!matrices.has(key))matrices.set(key,{geometry:new THREE.BoxGeometry(w,h,d),material:m,list:[]});
-    const o=new THREE.Object3D();o.position.set(x,y,z);o.rotation.z=rz;o.updateMatrix();matrices.get(key).list.push(o.matrix.clone());
+  // The ground floor is a flower shop; the upper floor is a neighbourhood cafe.
+  const leaf=mat('#687c5d'),stem=mat('#58745e');
+  const flowerColors=['#d97872','#e9c16e','#df9baa','#eee5d0','#9d8dbb','#e98e62'].map(c=>mat(c));
+  const potColors=['#b87658','#d3c4a8','#718779','#9c8065'].map(c=>mat(c));
+  const petalGeometry=new THREE.SphereGeometry(.065,7,5),centerGeometry=new THREE.SphereGeometry(.037,7,5);
+  const stemGeometry=new THREE.CylinderGeometry(1,1,1,6),leafGeometry=new THREE.BoxGeometry(1,1,1);
+  const flowerParts=new Map(),flowerDummy=new THREE.Object3D(),flowerCenter=mat('#d9ad58');
+  function flowerPart(geometry,material,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0){
+    const key=geometry.uuid+material.uuid;
+    if(!flowerParts.has(key))flowerParts.set(key,{geometry,material,matrices:[]});
+    flowerDummy.position.set(x,y,z);flowerDummy.rotation.set(rx,ry,rz);flowerDummy.scale.set(sx,sy,sz);flowerDummy.updateMatrix();
+    flowerParts.get(key).matrices.push(flowerDummy.matrix.clone());
   }
-  function ring(x,y,z,r,thick,material,parent=group,arc=Math.PI*2){
-    const o=new THREE.Mesh(new THREE.TorusGeometry(r,thick,6,18,arc),material);o.position.set(x,y,z);parent.add(o);return o;
+  function flowerHead(x,y,z,color,s=1){
+    for(let i=0;i<5;i++){
+      const a=i*Math.PI*2/5;
+      flowerPart(petalGeometry,color,x+Math.cos(a)*.061*s,y+.008*s,z+Math.sin(a)*.061*s,.78*s,s,.58*s,0,-a,0);
+    }
+    flowerPart(centerGeometry,flowerCenter,x,y+.018*s,z,s,s,s);
   }
-  function wrench(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    B(.065,.48,.038,0,0,0,steel,false,g);
-    const head=ring(0,.255,.01,.115,.034,steel,g,Math.PI*1.60);head.rotation.z=Math.PI*.20;
-    ring(0,-.245,.012,.068,.029,steel,g);
-    B(.017,.26,.040,0,-.02,.009,metal,false,g);return g;
+  function bouquet(x,z,baseY=.62,scale=1,count=6){
+    const pot=C(.19*scale,.23*scale,.28*scale,x,baseY+.14*scale,z,potColors[Math.floor(rng()*potColors.length)],9,true);
+    C(.195*scale,.195*scale,.035*scale,x,baseY+.275*scale,z,mat('#8d755b'),10,false);
+    for(let i=0;i<count;i++){
+      const a=i*Math.PI*2/count+(.2-rng()*.4),lean=(.10+rng()*.13)*scale;
+      const fx=x+Math.cos(a)*lean,fz=z+Math.sin(a)*lean,fh=(.47+rng()*.26)*scale;
+      flowerPart(stemGeometry,stem,x+Math.cos(a)*lean*.38,baseY+.28*scale+fh*.50,z+Math.sin(a)*lean*.38,.013*scale,fh,.013*scale,0,0,Math.cos(a)*.16);
+      flowerPart(leafGeometry,leaf,x+Math.cos(a+.55)*lean*.56,baseY+.43*scale+fh*.24,z+Math.sin(a+.55)*lean*.56,.13*scale,.038*scale,.055*scale,0,-a,.34);
+      flowerHead(fx,baseY+.28*scale+fh,fz,flowerColors[Math.floor(rng()*flowerColors.length)],scale*.78);
+    }
+    return pot;
   }
-  function hammer(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    B(.061,.49,.055,0,0,0,mat('#a67753'),false,g);B(.065,.16,.067,0,-.15,0,mat('#714c3f'),false,g);
-    B(.24,.091,.085,-.018,.245,0,steel,true,g);B(.067,.12,.076,-.16,.28,0,metal,false,g);return g;
+  function displayTable(x,z,w=1.32,d=.70){
+    B(w,.075,d,x,.84,z,wood);B(w+.08,.045,d+.08,x,.895,z,mat('#d5c4a6'),false);
+    for(const dx of [-w*.42,w*.42])for(const dz of [-d*.37,d*.37])B(.065,.46,.065,x+dx,.59,z+dz,bronze,false);
   }
-  function pliers(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    const red=mat('#a74d44');
-    for(const s of [-1,1]){const h=B(.053,.27,.055,s*.058,-.105,0,red,false,g);h.rotation.z=s*-.18;const a=B(.045,.22,.039,s*.044,.11,0,steel,false,g);a.rotation.z=s*.25;}
-    C(.052,.052,.06,0,.025,0,metal,10,false,g).rotation.x=Math.PI/2;return g;
+  // Low tables and a back-wall display keep the original shop's open, walkable floor plan.
+  for(const x of [-3.35,-2.27,-1.19,.97]){
+    B(.045,1.72,.045,x,1.45,-3.12,wood,false);
+    B(.045,1.72,.045,x+.88,1.45,-3.12,wood,false);
+    for(const y of [.86,1.43,2.0]){
+      B(.92,.045,.48,x+.44,y,-3.12,shelf,false);
+      bouquet(x+.22,-3.07,y+.03,.53,4);
+      bouquet(x+.68,-3.07,y+.03,.53,4);
+    }
   }
-  function screwdriver(x,y,z,size=1,angle=0,parent=group){
-    const g=new THREE.Group();g.position.set(x,y,z);g.rotation.z=angle;g.scale.setScalar(size);parent.add(g);
-    B(.060,.20,.051,0,-.13,0,mat('#d99d52'),false,g);B(.022,.31,.024,0,.12,0,steel,false,g);return g;
+  L(1.20,.24,-1.12,2.42,-2.81,'鲜花 · 花束','#e8ddc8','#60745e',{fontSize:48});
+  displayTable(-2.45,-1.30,1.30,.70);displayTable(-.45,-1.30,1.30,.70);
+  bouquet(-2.78,-1.30,.93,.76,7);bouquet(-2.10,-1.30,.93,.76,6);
+  bouquet(-.78,-1.30,.93,.76,7);bouquet(-.10,-1.30,.93,.76,6);
+  // Front-window buckets make the flower-shop purpose legible from the street.
+  for(const x of [-3.15,-2.50,-1.85,.55,1.18,1.83])bouquet(x,.28,.60,.70,5);
+  // A wrapping counter and a compact checkout occupy the right wall.
+  B(1.20,.78,.62,.91,.98,-.36,wood);B(1.29,.075,.70,.91,1.41,-.36,mat('#d5c4a6'));
+  B(.78,.035,.018,.91,1.12,-.039,mat('#81917c'),false);
+  L(.70,.18,.91,1.14,-.024,'花束包装','#f0e6d2','#60745e',{fontSize:42});
+  const register=B(.29,.20,.052,.86,1.56,-.02,bronze);register.rotation.x=-.18;
+  B(.23,.14,.018,.86,1.57,.012,mat('#a8c0a1'),false);
+  // Paper rolls, ribbon spools and seedling trays add florist-specific work details.
+  for(let i=0;i<3;i++){
+    C(.075,.075,.30,.35+i*.19,1.10,-.47,mat(['#eee4d0','#dba5a0','#9cae8c'][i]),12,true).rotation.z=Math.PI/2;
+    C(.035,.035,.31,.35+i*.19,1.10,-.47,wood,10,false).rotation.z=Math.PI/2;
   }
-  // Front-visible endcap pegboard is carefully stocked with different hand tools.
-  B(2.47,1.38,.095,-2.37,1.66,-.73,wood);
-  const holes=new THREE.InstancedMesh(new THREE.CylinderGeometry(.009,.009,.007,5),bronze,22*11);let holeIdx=0;const dummy=new THREE.Object3D();
-  for(let row=0;row<11;row++)for(let col=0;col<22;col++){dummy.position.set(-3.50+col*.105,1.09+row*.11,-.676);dummy.rotation.x=Math.PI/2;dummy.updateMatrix();holes.setMatrixAt(holeIdx++,dummy.matrix);}group.add(holes);
-  for(let i=0;i<7;i++){
-    const x=-3.35+i*.33;T([[x,2.19,-.67],[x,2.19,-.57],[x,2.13,-.57]],.009,bronze);
-    const f=[wrench,pliers,hammer,wrench,screwdriver,pliers,wrench][i];f(x,1.88,-.55,.74+(i%3)*.11,i%2?.12:-.09);
-  }
-  for(let i=0;i<8;i++){
-    const m=mat(['#b69b70','#8d9c93','#b47a67','#aeb4a5'][i%4]);stock(.22,.27,.13,-3.44+i*.29,1.18,-.56,m);
-    L(.19,.087,-3.44+i*.29,1.16,-.483,'OUGAONE','#eee1c6','#6d5751');
-  }
-  B(2.46,.08,.49,-2.37,.965,-.47,shelf);
-  B(2.45,.45,.06,-2.37,0.70,-.66,shelf,false);
+  B(1.05,.08,.54,-.66,.64,.02,mat('#b99c76'));
+  for(let i=0;i<6;i++)bouquet(-1.08+(i%3)*.34,-.02+Math.floor(i/3)*.18,.70,.38,3);
+  L(.78,.16,-.66,1.46,.20,'TODAY · FRESH FLOWERS','#e7dcc5','#637660',{fontSize:36});
 
-  // Shelves against the rear wall and along the side contain paint, fasteners and boxes.
-  function shelving(x,z,w,h=1.80,d=.51){
-    for(const xx of [x-w/2,x+w/2])B(.065,h,d,xx,.59+h/2,z,shelf);
-    for(const y of [.62,1.07,1.52,1.97,2.36].filter(v=>v<.59+h))B(w,.057,d,x,y,z,shelf);
-    B(w,h,.045,x,.59+h/2,z-d/2,mat('#8e8779'),false);
+  for(const {geometry,material,matrices} of flowerParts.values()){
+    const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);mesh.name='flower-shop-botanical-detail';
+    matrices.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;
+    mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
   }
-  shelving(-1.29,-3.11,2.64,1.90,.53);shelving(.83,-2.18,.76,1.77,.51);
-  const tinColors=['#b56357','#97a795','#cab070','#81929b','#d1bfa0'];
-  for(let shelfRow=0;shelfRow<3;shelfRow++)for(let n=0;n<9;n++){
-    const x=-2.44+n*.29,y=.80+shelfRow*.45,z=-2.985;
-    const c=C(.113,.113,.285,x,y,z,mat(tinColors[(n+shelfRow)%5]),10,false);C(.12,.12,.025,x,y+.153,z,steel,10,false);
-    stock(.13,.08,.004,x,y,-2.869,paper);
-  }
-  for(let row=0;row<3;row++)for(let n=0;n<3;n++){
-    const x=.56+n*.26,y=.81+row*.45,z=-2.10;
-    stock(.20,.28,.27,x,y,z,mat(['#ab845e','#8f9c97','#a96f5d'][(n+row)%3]));stock(.13,.055,.008,x,y,-1.958,paper);
-  }
-  // A low centre island keeps the windows open while filling the actual floor plan.
-  for(const x of [-1.80,-.49])B(.06,.79,.67,x,1.0,-1.81,metal,false);
-  for(const y of [.64,.97,1.33])B(1.40,.058,.68,-1.145,y,-1.81,shelf);
-  for(let i=0;i<6;i++){
-    const x=-1.69+(i%3)*.50,z=-2.01+Math.floor(i/3)*.38;
-    B(.40,.20,.29,x,1.45,z,mat(i%2?'#6d7775':'#a44c48'));
-    B(.18,.031,.06,x,1.576,z,bronze,false);
-    for(const dx of [-.14,.14])B(.027,.06,.014,x+dx,1.465,z+.154,steel,false);
-    stock(.41,.25,.27,x,.795,z,mat('#b19e7c'));
-  }
-  // Repair bench and register are visible through the long right-hand window.
-  B(.75,.75,1.43,.85,.95,-.39,wood);B(.87,.075,1.53,.85,1.363,-.39,mat('#d2b991'));
-  for(const z of [-.92,-.42,.07])B(.016,.49,.36,1.238,.95,z,mat('#937c62'),false);
-  for(const z of [-.86,-.36,.14])B(.032,.052,.12,1.266,1.06,z,bronze,false);
-  B(.28,.14,.29,.85,1.472,.09,dark);const register=B(.31,.25,.058,.87,1.642,.02,bronze);register.rotation.x=-.20;
-  const screen=P(.23,.14,.87,1.65,.058,(c,W,H)=>{c.fillStyle='#9cab91';c.fillRect(0,0,W,H);c.fillStyle='#425146';c.font=`700 ${H*.33}px monospace`;c.fillText('OUGAONE',W*.09,H*.42);c.fillRect(W*.10,H*.64,W*.76,H*.06);});screen.rotation.x=-.20;
-  B(.22,.11,.21,.76,1.48,-.64,steel);B(.08,.27,.12,.79,1.60,-.71,metal,false);
-  B(.13,.085,.06,.94,1.58,-.65,bronze,false);T([[.72,1.54,-.65],[.71,1.70,-.65],[.89,1.70,-.65]],.023,steel);
-  hammer(.46,1.444,-.70,.48,Math.PI/2);wrench(.63,1.448,-.33,.51,Math.PI/2);
-  // Small sorted screw trays, twine spools and coiled cable behind the bench.
-  for(let i=0;i<4;i++){B(.14,.095,.18,.93,1.449,-1.18+i*.20,mat('#797e78'),false);stock(.10,.028,.10,.93,1.50,-1.18+i*.20,steel);}
-  for(const z of [-2.57,-2.18]){C(.14,.14,.08,-3.12,.65,z,mat('#a8a087'));C(.10,.10,.32,-3.12,.85,z,mat('#b39265'));C(.14,.14,.05,-3.12,1.03,z,mat('#a8a087'));}
-  // Spare ladders and a tidy staff door reward a view from the back.
-  for(const x of [-3.36,-2.96]){const leg=B(.046,1.79,.046,x,1.48,-2.59,metal,false);leg.rotation.x=-.12;}
-  for(let i=0;i<6;i++)B(.44,.036,.042,-3.16,.77+i*.27,-2.66+i*.032,steel,false);
-  B(.81,1.69,.075,-.03,1.44,-3.40,mat('#857b69'));
-  for(const x of [-.46,.40])B(.052,1.80,.061,x,1.44,-3.40,bronze,false);
-  B(.05,.15,.036,.26,1.39,-3.365,steel,false);
-  L(.38,.13,-.03,2.09,-3.36,'PROJECT LAB','#d8c6a6','#756254');
-  // Fine tiled floor guide line leads to the counter.
-  for(let x=-3.55;x<1.40;x+=.50)B(.014,.006,3.78,x,.574,-1.40,mat('#a89d87'),false);
-  for(let z=-3.29;z<.47;z+=.50)B(5.13,.006,.014,-1.10,.574,z,mat('#a89d87'),false);
-  B(.04,.009,1.63,-.21,.58,-.84,mat('#b2aa81'),false);
 
-  // Upstairs workshop: oversized wrench on display, cabinet, workbench and crates.
-  B(1.40,.68,.56,-2.48,3.46,-.29,wood);B(1.49,.075,.64,-2.48,3.838,-.29,shelf);
-  wrench(-2.10,4.13,.20,1.40,.30);hammer(-1.61,4.03,-.33,1.05,-.31);
-  B(.57,.52,.66,-.59,3.44,-.22,mat('#b29472'));B(.51,.48,.65,.03,3.42,-.22,mat('#a58c71'));
-  B(.62,.05,.70,-.59,3.72,-.22,wood);B(.56,.05,.69,.03,3.68,-.22,wood);
-  for(let i=0;i<4;i++)stock(.038,.40,.012,-.82+i*.14,3.45,.121,mat('#836e58'));
-  // An upstairs rack sits behind the freestanding display wrench.
-  const upperRack=new THREE.Group();group.add(upperRack);
-  for(const x of [-2.85,-.83])B(.059,1.50,.46,x,3.80,-2.97,wood,false,upperRack);
-  for(const y of [3.10,3.55,4.02,4.49])B(2.06,.057,.48,-1.84,y,-2.97,shelf,true,upperRack);
-  for(let row=0;row<3;row++)for(let i=0;i<7;i++){
-    const x=-2.69+i*.28,y=3.28+row*.47,z=-2.86;
-    stock(.22,.29,.25,x,y,z,mat(['#b5956d','#a7735c','#88928a'][(row+i)%3]));stock(.12,.056,.006,x,y,-2.731,paper);
+  // Upstairs cafe: a warm service counter, espresso station, pastry case and two window tables.
+  B(2.72,.62,.62,-1.42,3.45,-2.98,wood);
+  B(2.80,.075,.69,-1.42,3.80,-2.98,mat('#d7c4a2'));
+  B(.62,.39,.40,-2.28,4.02,-2.83,mat('#596d62'));
+  B(.47,.10,.32,-2.28,4.265,-2.83,bronze);
+  B(.33,.16,.18,-2.28,4.39,-2.82,mat('#b6a789'));
+  C(.09,.09,.15,-2.13,4.48,-2.80,bronze,12,true);
+  for(const x of [-2.49,-2.28,-2.07])C(.026,.026,.16,x,4.22,-2.57,metal,10);
+  // Pastry glass and neat rows of baked goods sit beside the coffee machine.
+  B(.70,.07,.34,-.72,3.96,-2.79,wood);
+  B(.68,.32,.025,-.72,4.15,-2.78,glass,false);
+  B(.68,.025,.34,-.72,4.32,-2.79,glass,false);
+  for(const x of [-.94,-.72,-.50]){
+    C(.075,.075,.10,x,4.035,-2.72,mat('#c49365'),9);
+    C(.065,.065,.035,x,4.104,-2.72,mat('#e6c88f'),9);
   }
-  B(.83,1.27,.48,.73,3.73,-2.80,mat('#8d9489'));
-  for(const y of [3.47,4.07]){B(.035,.38,.026,.34,y,-2.55,bronze,false);B(.031,.07,.06,.51,y,-2.53,metal,false);}
-  B(1.52,.07,.67,.69,3.82,-1.52,wood);for(const z of [-1.76,-1.27])B(.07,.68,.07,1.27,3.43,z,bronze,false);
-  B(.44,.20,.31,.68,3.965,-1.52,mat('#9b7862'));B(.14,.04,.05,.68,4.084,-1.52,bronze,false);
-  ring(.99,4.04,-1.63,.13,.023,mat('#776b52'));ring(.99,4.04,-1.63,.10,.020,mat('#776b52'));
-  L(.72,.40,-.18,4.42,-3.40,'OUGAONE\nPROJECT LAB','#d8c3a1','#93544a');
+  L(1.20,.26,-1.08,4.67,.53,'咪茹咖啡','#53685c','#f1e5ce');
+  L(.77,.34,.54,4.38,-2.77,'手冲咖啡\n每日烘焙','#475b50','#f2e5cb');
+
+  function cafeTable(x,z){
+    B(.78,.075,.68,x,3.77,z,mat('#c49e73'));
+    C(.045,.045,.64,x,3.43,z,bronze,10);
+    B(.05,.06,.57,x,3.13,z,bronze,false);
+    for(const side of [-1,1]){
+      B(.42,.075,.40,x+side*.61,3.37,z,wood);
+      for(const dx of [-.15,.15])B(.055,.46,.055,x+side*.61+dx,3.10,z+.16,bronze,false);
+      B(.40,.42,.065,x+side*.61,3.62,z+.18,wood);
+    }
+    C(.075,.025,.04,x-.12,3.83,z,mat('#eee0c4'),10);
+    C(.075,.025,.04,x+.12,3.83,z,mat('#eee0c4'),10);
+  }
+  cafeTable(-1.86,-1.55);
+  cafeTable(.12,-1.30);
+  // A potted leafy plant softens the seating corner in the existing muted palette.
+  C(.18,.24,.26,1.04,3.18,-2.48,mat('#b67f63'),10,true);
+  C(.185,.185,.035,1.04,3.325,-2.48,mat('#806d55'),10);
+  for(const [x,y,z,sx,sy,sz] of [[.89,3.62,-2.48,.12,.34,.08],[1.18,3.59,-2.48,.11,.30,.08],[1.03,3.76,-2.48,.09,.31,.08],[.85,3.82,-2.48,.10,.24,.07]]){
+    const leafMesh=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),leaf);
+    leafMesh.position.set(x,y,z);leafMesh.scale.set(sx,sy,sz);group.add(leafMesh);
+  }
 
   // Ceiling fixture meshes and all artificial emission are returned for time switching.
   const warmLamp=emissive('#ffe0a4',1.15);
@@ -318,9 +314,6 @@ export function buildHardware(ctx){
     c.fillStyle='#92464a';c.font=`800 ${H*.17}px Arial`;c.textAlign='center';c.fillText('OUGAONE',W/2,H*.23);
     for(let i=0;i<3;i++){c.fillStyle=['#b8b695','#bc9277','#9da69d'][i];c.fillRect(W*(.07+i*.31),H*.34,W*.24,H*.55);c.fillStyle='#756853';for(let r=0;r<5;r++)c.fillRect(W*(.09+i*.31),H*(.42+r*.08),W*.19,H*.017);}
   },{rotY:-Math.PI/2});
-  for(const batch of matrices.values()){
-    const mesh=new THREE.InstancedMesh(batch.geometry,batch.material,batch.list.length);batch.list.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);instances.push(mesh);
-  }
   const growthFloors=[];
   const featureUpgrades=[];
   let growthLevel=0;

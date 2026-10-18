@@ -9,8 +9,11 @@ function cells(line) {
 
 export function parsePlan(markdown, updatedAt) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n');
+  const title = lines.find((line) => /^# /.test(line))?.slice(2).trim() || '';
+  const nextAction = lines.find((line) => /^当前下一动作：/.test(line))?.replace(/^当前下一动作：/, '').trim() || '';
   const summary = { total: 0, notStarted: 0, inProgress: 0, awaitingReview: 0, completed: 0, blocked: 0 };
   const groups = [];
+  const candidates = [];
   let section = '';
   let candidateCount = 0;
   let featureCount = 0;
@@ -27,31 +30,36 @@ export function parsePlan(markdown, updatedAt) {
     if (!isFormal && !isCandidate) continue;
     if (isFormal) sawFormal = true;
     if (isCandidate) sawCandidate = true;
-    const group = isFormal ? { title: section, summary: { total: 0, notStarted: 0, inProgress: 0, awaitingReview: 0, completed: 0, blocked: 0 } } : null;
+    const group = isFormal ? { title: section, summary: { total: 0, notStarted: 0, inProgress: 0, awaitingReview: 0, completed: 0, blocked: 0 }, tasks: [] } : null;
     if (group) groups.push(group);
     index += 2;
     while (lines[index]?.trim().startsWith('|')) {
       const row = cells(lines[index]);
       const id = row[0] || '';
+      const title = row[1] || '';
       const status = row.at(-1) || '';
       if (isFormal ? !/^(?:PLAN|P|A|U|F|B|S)-\d+$/.test(id) : !/^C-\d+$/.test(id)) throw new Error('计划表格包含无法识别的任务');
       const key = STATUS_KEYS[status];
       if (!key) throw new Error('计划表格包含无法识别的状态');
       if (isFormal) {
         summary.total++; summary[key]++; group.summary.total++; group.summary[key]++;
+        group.tasks.push({ id, title, dependencies: row[2] || '', acceptance: row[3] || '', status });
         const feature = /^F-(\d+)$/.exec(id);
         if (feature && Number(feature[1]) >= 9) {
           featureCount++;
           if (key === 'completed') completedFeatureCount++;
         }
       }
-      else candidateCount++;
+      else {
+        candidateCount++;
+        candidates.push({ id, title, question: row[2] || '', status });
+      }
       index++;
     }
     index--;
   }
   if (!sawFormal || !sawCandidate || !summary.total) throw new Error('计划表格不完整');
-  return { updatedAt, summary, groups, candidateCount, features: { total: featureCount, completed: completedFeatureCount } };
+  return { title, nextAction, updatedAt, summary, groups, candidates, candidateCount, features: { total: featureCount, completed: completedFeatureCount } };
 }
 
 export function aggregatePlan(value, updatedAt) {
@@ -60,21 +68,40 @@ export function aggregatePlan(value, updatedAt) {
   for (const key of ['total', ...Object.values(STATUS_KEYS)]) {
     if (!Number.isSafeInteger(summary[key]) || summary[key] < 0) throw new Error('计划 API 汇总无效');
   }
-  const featureTasks = value.groups.flatMap((group) => group.tasks).filter((task) => {
-    const match = /^F-(\d+)$/.exec(task.id || '');
+  const groups = value.groups.map((group) => {
+    if (!group || typeof group.title !== 'string' || !Array.isArray(group.tasks)) throw new Error('计划 API 任务分组无效');
+    const tasks = group.tasks.map((task) => {
+      if (!task || typeof task.id !== 'string' || typeof task.title !== 'string' || typeof task.dependencies !== 'string' || typeof task.acceptance !== 'string' || !Object.hasOwn(STATUS_KEYS, task.status)) throw new Error('计划 API 任务详情无效');
+      return { id: task.id.slice(0, 50), title: task.title.slice(0, 500), dependencies: task.dependencies.slice(0, 1000), acceptance: task.acceptance.slice(0, 3000), status: task.status };
+    });
+    return { title: group.title.slice(0, 100), tasks };
+  });
+  const candidates = value.candidates.map((candidate) => {
+    if (!candidate || typeof candidate.id !== 'string' || typeof candidate.title !== 'string' || typeof candidate.question !== 'string' || !Object.hasOwn(STATUS_KEYS, candidate.status)) throw new Error('计划 API 候选能力无效');
+    return { id: candidate.id.slice(0, 50), title: candidate.title.slice(0, 500), question: candidate.question.slice(0, 2000), status: candidate.status };
+  });
+  const taskList = groups.flatMap((group) => group.tasks);
+  const calculated = { total: taskList.length, ...Object.fromEntries(Object.values(STATUS_KEYS).map((key) => [key, taskList.filter((task) => STATUS_KEYS[task.status] === key).length])) };
+  if (Object.entries(calculated).some(([key, count]) => summary[key] !== count)) throw new Error('计划 API 汇总与任务详情不一致');
+  const featureTasks = taskList.filter((task) => {
+    const match = /^F-(\d+)$/.exec(task.id);
     return match && Number(match[1]) >= 9;
   });
   return {
+    title: typeof value.title === 'string' ? value.title.slice(0, 160) : '',
+    nextAction: typeof value.nextAction === 'string' ? value.nextAction.slice(0, 3000) : '',
     updatedAt,
     summary,
-    groups: value.groups.map((group) => ({
-      title: String(group.title).slice(0, 100),
+    groups: groups.map((group) => ({
+      title: group.title,
+      tasks: group.tasks,
       summary: {
         total: group.tasks.length,
         ...Object.fromEntries(Object.values(STATUS_KEYS).map((key) => [key, group.tasks.filter((task) => STATUS_KEYS[task.status] === key).length])),
       },
     })),
-    candidateCount: value.candidates.length,
+    candidates,
+    candidateCount: candidates.length,
     features: { total: featureTasks.length, completed: featureTasks.filter((task) => task.status === '完成').length },
   };
 }

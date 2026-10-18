@@ -212,41 +212,77 @@ export function buildStreet(ctx) {
   guardRail(2.59,4.51);
   groundRails();
 
-  // Street-name sign and a small convex corner mirror on one slender post.
+  // Local direction signs point to nearby Shunde neighbourhoods.
   const groundSigns = groundSection(.21);
-  cyl(.032,.038,1.96,3.13,1.14,-.39,steel,9,true);
-  box(.56,.21,.035,3.13,1.98,-.39,teal,true);
-  label(.50,.125,3.13,1.98,-.365,'ひかり通り','#2e797d','#dce6d5');
+  cyl(.032,.038,2.12,3.13,1.14,-.39,steel,9,true);
+  const destinations=[
+    ['容桂街道  →',2.03,'#2e797d','#e6e8d6'],
+    ['大福基  ←',1.80,'#536e62','#eee5ce'],
+    ['穗香  ↑',1.57,'#8d6955','#f0e3c9'],
+    ['红旗  →',1.34,'#687c85','#e8eadb'],
+  ];
+  for(const [text,y,bg,fg] of destinations){
+    box(.99,.19,.035,3.13,y,-.39,teal,true);
+    label(.93,.15,3.13,y,-.365,text,bg,fg);
+  }
   const mirror=new THREE.Mesh(new THREE.SphereGeometry(.175,18,10,0,Math.PI*2,0,Math.PI/2),mat('#98bac0'));
   mirror.rotation.x=Math.PI/2;
-  mirror.position.set(3.13,2.35,-.33); scene.add(mirror);
+  mirror.position.set(3.13,2.47,-.33); scene.add(mirror);
   const mirrorRim=new THREE.Mesh(new THREE.TorusGeometry(.176,.018,6,24),coral);
-  mirrorRim.position.set(3.13,2.35,-.32); scene.add(mirrorRim);
-  box(.42,.11,.037,3.13,1.61,-.39,ivory,true);
-  label(.36,.074,3.13,1.61,-.365,'歩行者注意','#dddaca','#526779');
+  mirrorRim.position.set(3.13,2.47,-.32); scene.add(mirrorRim);
+  box(.42,.11,.037,3.13,2.24,-.39,ivory,true);
+  label(.36,.074,3.13,2.24,-.365,'减速慢行','#dddaca','#526779');
   groundSigns();
 
-  // A community notice board by the little alley, a miniature print collage.
+  // The alley board mirrors tasks marked in progress on the live OUGAONE plan.
   const groundBoard = groundSection(.10);
   const boardX=-5.24,boardZ=-.57;
   for(const x of [boardX-.27,boardX+.27]) box(.045,1.10,.055,x,.72,boardZ,metal,true);
   box(.66,.77,.075,boardX,1.09,boardZ,dark,true);
-  panel(.57,.67,boardX,1.09,boardZ+.041,(c,w,h)=>{
-    w=w||c.canvas.width; h=h||c.canvas.height;
+  let activeTasks=null;
+  const drawTasks=(c,w,h)=>{
     c.fillStyle='#bcc7b5';c.fillRect(0,0,w,h);
-    c.fillStyle='#385e67';c.fillRect(0,0,w,h*.17);
-    c.fillStyle='#e4e7d2';c.font=`bold ${h*.09}px sans-serif`;c.textAlign='center';c.fillText('町内のお知らせ',w*.5,h*.115);
-    const notices=[{x:.055,y:.23,w:.43,h:.33,bg:'#e9ddb8',ink:'#a3524a',text:'秋まつり'}, {x:.55,y:.22,w:.40,h:.28,bg:'#d9e4cc',ink:'#456f78',text:'ごみの日'}, {x:.09,y:.63,w:.45,h:.29,bg:'#dddfcf',ink:'#557386',text:'夜の見守り'}, {x:.60,y:.58,w:.32,h:.35,bg:'#e8cab5',ink:'#9b6355',text:'お知らせ'}];
-    for(const p of notices){
-      c.save();c.translate(w*(p.x+p.w/2),h*(p.y+p.h/2));c.rotate(p.x>.5?.035:-.025);
-      const pw=w*p.w,ph=h*p.h;c.fillStyle=p.bg;c.fillRect(-pw/2,-ph/2,pw,ph);
-      c.fillStyle=p.ink;c.font=`bold ${h*.046}px sans-serif`;c.fillText(p.text,0,-ph*.22);
-      c.fillStyle='#789083';for(let i=0;i<3;i++)c.fillRect(-pw*.35,ph*(-.02+i*.13),pw*.7,h*.009);
-      c.fillStyle='#849177';c.beginPath();c.arc(0,-ph/2+h*.012,h*.008,0,Math.PI*2);c.fill();c.restore();
+    c.fillStyle='#385e67';c.fillRect(0,0,w,h*.18);
+    c.fillStyle='#f0e7d0';c.font=`bold ${h*.092}px sans-serif`;c.textAlign='center';c.textBaseline='middle';
+    c.fillText('计划 · 进行中',w*.5,h*.09);
+    c.textAlign='left';
+    const tasks=activeTasks?.slice(0,3)||[];
+    const fit=(value,maxWidth)=>{
+      let text=String(value);
+      while(text&&c.measureText(text).width>maxWidth)text=text.slice(0,-1);
+      return text===String(value)?text:text.slice(0,-1)+'…';
+    };
+    if(!tasks.length){
+      c.fillStyle='#385e67';c.font=`bold ${h*.075}px sans-serif`;
+      c.fillText(activeTasks===null?'计划数据暂不可用':'当前没有进行中的任务',w*.07,h*.50);
+      c.fillStyle='#788775';c.font=`${h*.045}px sans-serif`;
+      c.fillText(activeTasks===null?'正在等待自动重试':'计划数据每分钟自动更新',w*.07,h*.64);
+      return;
     }
-  });
+    const rowH=h*.245;
+    tasks.forEach((task,index)=>{
+      const y=h*.20+index*rowH;
+      c.fillStyle=index%2?'#e4e4d1':'#e9ddb8';
+      c.fillRect(w*.045,y,w*.91,rowH-h*.018);
+      c.fillStyle='#8b5348';c.font=`bold ${h*.052}px sans-serif`;
+      c.fillText(fit(task.id||'',w*.82),w*.075,y+h*.068);
+      c.fillStyle='#3e554d';c.font=`bold ${h*.052}px sans-serif`;
+      const title=fit(task.title||'',w*.82);
+      c.fillText(title,w*.075,y+h*.151);
+    });
+    c.fillStyle='#546d5c';c.font=`${h*.038}px sans-serif`;
+    c.fillText('点击查看计划状态',w*.07,h*.96);
+  };
+  const notice=panel(.57,.67,boardX,1.09,boardZ+.041,(c,w,h)=>drawTasks(c,w,h));
+  function setActiveTasks(tasks){
+    activeTasks=Array.isArray(tasks)?tasks.filter(task=>task&&typeof task.title==='string').slice(0,3):null;
+    const canvas=notice.material.map.image;
+    drawTasks(canvas.getContext('2d'),canvas.width,canvas.height);
+    notice.material.map.needsUpdate=true;
+  }
   box(.73,.07,.22,boardX,1.515,boardZ,metal,true);
   groundBoard();
 
-  return { signalMaterials, lampLight };
+  notice.userData.interactive='plan-status';
+  return { signalMaterials, lampLight, noticeBoard:notice, setActiveTasks };
 }

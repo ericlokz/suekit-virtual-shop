@@ -1,8 +1,10 @@
 import { createPerson } from './person.js';
 
-// Each unique visitor in the dashboard corresponds to one miniature customer.
-export function customerCountFor(visitors) {
-  return Number.isSafeInteger(visitors) && visitors >= 0 ? visitors : 0;
+// One pedestrian appears per 100 lines of additions plus deletions committed today.
+export function pedestriansForCodeChanges(additions, deletions) {
+  const added = Number.isSafeInteger(additions) && additions > 0 ? additions : 0;
+  const removed = Number.isSafeInteger(deletions) && deletions > 0 ? deletions : 0;
+  return Math.min(16, Math.ceil((added + removed) / 100));
 }
 
 // Independent clear activity areas replace the shared circuit and its queue.
@@ -32,8 +34,8 @@ export function buildVisitors(ctx, traffic = {}) {
     seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const group = new THREE.Group(); group.name = 'miniature customers'; scene.add(group);
-  const count = customerCountFor(traffic.visitors);
+  const group = new THREE.Group(); group.name = 'miniature neighbourhood pedestrians'; scene.add(group);
+  const count = Number.isSafeInteger(traffic.visitors) && traffic.visitors >= 0 ? traffic.visitors : 0;
   const people = [];
   let shopGuest = null, opening = 0;
 

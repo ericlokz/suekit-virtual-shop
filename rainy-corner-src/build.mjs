@@ -27,7 +27,7 @@ ${analytics}
 <body><main class="project-dashboard">
 <section class="model-stage" aria-label="OUGAONE 项目建筑模型">
 <header class="scene-heading"><h1>OUGAONE</h1><p class="scene-description">一个项目，持续生长</p></header>
-<canvas id="world" role="img" aria-label="OUGAONE 项目生长中的三维微缩场景。鼠标拖动旋转、滚轮缩放、右键拖动平移；触屏单指旋转、双指缩放和平移。">OUGAONE 项目进度三维场景</canvas>
+<canvas id="world" role="img" aria-label="OUGAONE 项目生长中的三维微缩场景。点击左侧告示牌聚焦并查看进行中计划；鼠标拖动旋转、滚轮缩放、右键拖动平移；触屏单指旋转、双指缩放和平移。">OUGAONE 项目进度三维场景</canvas>
 <div class="model-toolbar">
 <a class="project-repo-link" href="https://github.com/ericlokz/OUGAONE" target="_blank" rel="noopener noreferrer" aria-label="打开 OUGAONE 项目仓库（新窗口）">查看项目仓库 <span aria-hidden="true">↗</span></a>
 <div class="switches" aria-label="场景模式">

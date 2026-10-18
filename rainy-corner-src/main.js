@@ -4,7 +4,7 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { buildHardware } from './hardware.js';
 import { buildSeasons } from './seasons.js';
 import { buildStreet } from './street.js';
-import { buildVisitors } from './visitors.js';
+import { buildVisitors, pedestriansForCodeChanges } from './visitors.js';
 import { mountMetricsPanel } from './metrics-panel.js';
 import { projectMetrics, loadProjectMetrics } from './metrics-data.js';
 
@@ -49,7 +49,11 @@ function resize(){
 new ResizeObserver(resize).observe(modelStage);
 addEventListener('resize',resize);resize();
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('pointerdown',()=>canvas.style.cursor='grabbing');
+let noticePointerDown=null;
+canvas.addEventListener('pointerdown',event=>{
+  canvas.style.cursor='grabbing';
+  noticePointerDown=event.button===0?[event.clientX,event.clientY]:null;
+});
 addEventListener('pointerup',()=>canvas.style.cursor='grab');
 const skyLight=new THREE.HemisphereLight('#8aa8d3','#313048',1.0);scene.add(skyLight);
 const moon=new THREE.DirectionalLight('#95aee7',1.8);
@@ -175,14 +179,43 @@ buildingHeight=hardware.setProgress(0);
 hardware.setFeatureProgress(0);
 ctx.awning=hardware.awning;
 const street=buildStreet(ctx);
+const noticeRaycaster=new THREE.Raycaster(),noticePointer=new THREE.Vector2();
+let cameraTransition=null;
+function focusNoticeBoard(){
+  const fromTarget=controls.target.clone(),fromPosition=camera.position.clone();
+  const target=street.noticeBoard.getWorldPosition(new THREE.Vector3());
+  const destinationPosition=target.clone().add(fromPosition.sub(fromTarget));
+  cameraTransition={
+    start:performance.now(),fromTarget,fromPosition:camera.position.clone(),
+    toTarget:target,toPosition:destinationPosition,fromZoom:camera.zoom,
+    toZoom:Math.min(3.5,Math.max(camera.zoom,2.8)),
+  };
+  metricsPanel.focusPlanStatus();
+}
+function hitNoticeBoard(event){
+  const rect=canvas.getBoundingClientRect();
+  noticePointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);
+  noticeRaycaster.setFromCamera(noticePointer,camera);
+  return noticeRaycaster.intersectObject(street.noticeBoard,false).length>0;
+}
+canvas.addEventListener('pointerup',event=>{
+  const start=noticePointerDown;noticePointerDown=null;
+  if(start&&Math.hypot(event.clientX-start[0],event.clientY-start[1])<6&&hitNoticeBoard(event))focusNoticeBoard();
+});
+canvas.addEventListener('pointercancel',()=>{noticePointerDown=null;});
+canvas.addEventListener('pointermove',event=>{
+  if(!event.buttons)canvas.style.cursor=hitNoticeBoard(event)?'pointer':'grab';
+});
 const seasons=buildSeasons(ctx);
-let visitors=buildVisitors(ctx, { visitors: 0 });
+let visitors=buildVisitors(ctx, { visitors: 0, sourceMode: 'daily-code-churn', changedLines: 0 });
 let metricsTimer;
 async function updateProjectMetrics() {
   clearTimeout(metricsTimer);
   try {
     const data = await loadProjectMetrics();
     metricsPanel.update(data);
+    const activeTasks=Array.isArray(data.plan?.groups)?data.plan.groups.flatMap(group=>group.tasks||[]).filter(task=>task.status==='进行中'):null;
+    street.setActiveTasks(activeTasks);
     if (Number.isSafeInteger(data.plan?.summary?.total) && data.plan.summary.total > 0) {
       const progress = 100 * data.plan.summary.completed / data.plan.summary.total;
       buildingHeight = hardware.setProgress(progress);
@@ -194,11 +227,17 @@ async function updateProjectMetrics() {
       resize();
       controls.update();
     }
-    const visitorsCount = Math.min(16, data.traffic?.visitors || 0);
-    if (visitorsCount !== visitors.count) {
-      scene.remove(visitors.group);
-      visitors.group.clear();
-      visitors=buildVisitors(ctx, { visitors: visitorsCount });
+    const today = new Date().toISOString().slice(0, 10);
+    const dailyCode = data.code?.daily?.find(day => day.date === today);
+    if (dailyCode) {
+      const additions=dailyCode.additions||0,deletions=dailyCode.deletions||0;
+      const changedLines=additions+deletions;
+      const pedestriansCount=pedestriansForCodeChanges(additions,deletions);
+      if (pedestriansCount !== visitors.count) {
+        scene.remove(visitors.group);
+        visitors.group.clear();
+        visitors=buildVisitors(ctx, { visitors: pedestriansCount, sourceMode: 'daily-code-churn', changedLines });
+      } else visitors.traffic={visitors:pedestriansCount,sourceMode:'daily-code-churn',changedLines};
       recordState();
     }
     metricsTimer = setTimeout(updateProjectMetrics, 60000);
@@ -267,7 +306,8 @@ function recordState(){
   let objects=0;scene.traverse(()=>objects++);root.dataset.sceneObjects=String(objects);
   root.dataset.doorAngles=(hardware.doors||[]).map(d=>d.rotation.y.toFixed(3)).join(',');
   root.dataset.customerCount=String(visitors.count);
-  root.dataset.visitorCount=String(visitors.traffic.visitors ?? '');
+  root.dataset.visitorCount=String(visitors.count);
+  root.dataset.codeLinesChanged=String(visitors.traffic.changedLines ?? 0);
   root.dataset.customerSource=visitors.traffic.sourceMode;
   root.dataset.customerActivities=visitors.people.map(p=>p.state).join(',');
   root.dataset.customerPositions=visitors.people.map(p=>p.group.position.toArray().map(v=>v.toFixed(3)).join(',')).join(';');
@@ -323,6 +363,14 @@ const start=performance.now();let last=start,frameCounter=0;
 function animate(now){
   requestAnimationFrame(animate);
   const t=(now-start)/1000,dt=Math.min((now-last)/1000,.045);last=now;
+  if(cameraTransition){
+    const progress=Math.min(1,(now-cameraTransition.start)/850),ease=1-Math.pow(1-progress,3);
+    camera.position.lerpVectors(cameraTransition.fromPosition,cameraTransition.toPosition,ease);
+    controls.target.lerpVectors(cameraTransition.fromTarget,cameraTransition.toTarget,ease);
+    camera.zoom=cameraTransition.fromZoom+(cameraTransition.toZoom-cameraTransition.fromZoom)*ease;
+    camera.updateProjectionMatrix();
+    if(progress>=1)cameraTransition=null;
+  }
   controls.update();seasons.update(t,dt);
   const night=state.mode==='night';
   const customersMoving=visitors.update(t,dt);
