@@ -1,0 +1,50 @@
+name: Deploy project progress page
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'project.json'
+      - 'rainy-corner-src/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: rainy-corner-src/package-lock.json
+      - run: npm ci
+        working-directory: rainy-corner-src
+      - run: npm run build
+        working-directory: rainy-corner-src
+        env:
+          PROJECT_DATA_URL: ${{ vars.PROJECT_DATA_URL }}
+          UMAMI_SCRIPT_URL: ${{ vars.UMAMI_SCRIPT_URL }}
+          UMAMI_WEBSITE_ID: ${{ vars.UMAMI_WEBSITE_ID }}
+      - run: mkdir -p pages-site && cp index.html project.json pages-site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

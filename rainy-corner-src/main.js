@@ -6,12 +6,12 @@ import { buildSeasons } from './seasons.js';
 import { buildStreet } from './street.js';
 import { buildVisitors } from './visitors.js';
 import { mountMetricsPanel } from './metrics-panel.js';
-import { shopMetrics, loadShopMetrics } from './metrics-data.js';
+import { projectMetrics, loadProjectMetrics } from './metrics-data.js';
 
 // All textures, geometry, lighting and animation are made locally at runtime.
 const canvas = document.getElementById('world');
 const modelStage = document.querySelector('.model-stage');
-const metricsPanel = mountMetricsPanel(document.getElementById('metrics-panel'), shopMetrics);
+const metricsPanel = mountMetricsPanel(document.getElementById('metrics-panel'), projectMetrics);
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 renderer.setSize(modelStage.clientWidth, modelStage.clientHeight, false);
@@ -23,6 +23,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2('#172237', .018);
 const camera = new THREE.OrthographicCamera(-10,10,7,-7,.1,100);
+let buildingHeight=7;
 camera.position.set(12.8,11.6,16.5);
 const controls = new OrbitControls(camera,canvas);
 controls.target.set(-.1,2.0,-.2);
@@ -41,7 +42,7 @@ controls.update();
 function resize(){
   const width=Math.max(1,modelStage.clientWidth),height=Math.max(1,modelStage.clientHeight);
   // Keep the model's apparent size bounded on larger screens while preserving orbit and zoom controls.
-  const a=width/height,h=Math.max(15.2,19.0/a,height/68);
+  const a=width/height,h=Math.max(15.2,19.0/a,buildingHeight*1.30,height/68);
   camera.left=-h*a/2;camera.right=h*a/2;camera.top=h/2;camera.bottom=-h/2;
   camera.updateProjectionMatrix();renderer.setSize(width,height,false);
 }
@@ -170,32 +171,43 @@ wet.rotation.x=-Math.PI/2;wet.position.y=.280;wet.material.transparent=true;wet.
 
 // The reference shop replaces the convenience-store architecture and merchandise.
 const hardware=buildHardware(ctx);
+buildingHeight=hardware.setProgress(0);
+hardware.setFeatureProgress(0);
 ctx.awning=hardware.awning;
 const street=buildStreet(ctx);
 const seasons=buildSeasons(ctx);
-let visitors=buildVisitors(ctx, shopMetrics);
-let currentMetrics = shopMetrics;
+let visitors=buildVisitors(ctx, { visitors: 0 });
 let metricsTimer;
-async function updateShopMetrics() {
+async function updateProjectMetrics() {
   clearTimeout(metricsTimer);
   try {
-    const data = await loadShopMetrics();
+    const data = await loadProjectMetrics();
     metricsPanel.update(data);
-    if (data.visitors !== currentMetrics.visitors) {
+    if (Number.isSafeInteger(data.plan?.summary?.total) && data.plan.summary.total > 0) {
+      const progress = 100 * data.plan.summary.completed / data.plan.summary.total;
+      buildingHeight = hardware.setProgress(progress);
+      hardware.setFeatureProgress(data.plan.features?.completed || 0);
+      const targetY = Math.max(2, buildingHeight * .48);
+      const shift = targetY - controls.target.y;
+      controls.target.y = targetY;
+      camera.position.y += shift;
+      resize();
+      controls.update();
+    }
+    const visitorsCount = Math.min(16, data.traffic?.visitors || 0);
+    if (visitorsCount !== visitors.count) {
       scene.remove(visitors.group);
       visitors.group.clear();
-      visitors=buildVisitors(ctx, data);
+      visitors=buildVisitors(ctx, { visitors: visitorsCount });
       recordState();
     }
-    currentMetrics = data;
-    const next = Date.parse(data.nextUpdateAt) + 5 * 60000;
-    metricsTimer = setTimeout(updateShopMetrics, Math.max(3600000, next - Date.now()));
+    metricsTimer = setTimeout(updateProjectMetrics, 60000);
   } catch {
-    metricsPanel.update({ ...currentMetrics, loadError: true });
-    metricsTimer = setTimeout(updateShopMetrics, 3600000);
+    metricsPanel.update({ errors: { plan: '正在自动重试主仓库计划数据。' } });
+    metricsTimer = setTimeout(updateProjectMetrics, 60000);
   }
 }
-updateShopMetrics();
+updateProjectMetrics();
 const artificialLights=[];
 const emissiveMaterials=new Set();
 const lightHalos=[];
@@ -244,7 +256,7 @@ const shadow=new THREE.Mesh(new THREE.PlaneGeometry(17.2,17.2),new THREE.MeshBas
 const seasonNames=['spring','summer','autumn','winter'];
 const modeNames=['day','night'];
 let state={mode:'day',season:'spring'};
-try{const saved=JSON.parse(localStorage.getItem('suekit-miniature-state')||'null');if(saved){if(modeNames.includes(saved.mode))state.mode=saved.mode;if(seasonNames.includes(saved.season))state.season=saved.season;}}catch{}
+try{const saved=JSON.parse(localStorage.getItem('OUGAONE-miniature-state')||'null');if(saved){if(modeNames.includes(saved.mode))state.mode=saved.mode;if(seasonNames.includes(saved.season))state.season=saved.season;}}catch{}
 const modeButtons=[...document.querySelectorAll('[data-mode-choice]')];
 const seasonButtons=[...document.querySelectorAll('[data-season-choice]')];
 function recordState(){
@@ -301,7 +313,7 @@ function applyState(){
   renderer.shadowMap.needsUpdate=true;
   recordState();
   document.documentElement.dataset.weather=summer?'rain':state.season==='winter'?'snow':state.season==='spring'?'petals':'leaves';
-  try{localStorage.setItem('suekit-miniature-state',JSON.stringify(state));}catch{}
+  try{localStorage.setItem('OUGAONE-miniature-state',JSON.stringify(state));}catch{}
 }
 for(const b of modeButtons)b.addEventListener('click',()=>{state.mode=b.dataset.modeChoice;applyState();});
 for(const b of seasonButtons)b.addEventListener('click',()=>{state.season=b.dataset.seasonChoice;applyState();});

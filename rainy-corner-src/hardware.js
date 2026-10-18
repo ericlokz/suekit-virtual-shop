@@ -1,7 +1,7 @@
 // A tiny neighbourhood hardware shop, built entirely from geometry and canvas labels.
 export function buildHardware(ctx){
   const {THREE,scene,mat,box,cyl,tube,panel,label,glow,rng}=ctx;
-  const group=new THREE.Group();group.name='suekit hardware shop';scene.add(group);
+  const group=new THREE.Group();group.name='OUGAONE hardware shop';scene.add(group);
   const lights=[],glowMaterials=[],unlitPanels=[],glassStreakMaterials=[],doors=[],lampMeshes=[];
   const cream=mat('#d8cbb7'),creamLight=mat('#eadcc3'),plasterShade=mat('#b6a895');
   const burgundy=mat('#793c43'),redShade=mat('#62333b'),brickRed=mat('#8c4850');
@@ -121,8 +121,8 @@ export function buildHardware(ctx){
     for(const y of [.674,2.526])B(.68,.048,.063,centreX,y,.002,bronze,true,door);
     B(.043,.35,.043,i===0?.616:-.616,1.45,.072,steel,false,door);
     for(const y of [1.30,1.60])B(.039,.035,.065,i===0?.616:-.616,y,.046,steel,false,door);
-    L(.28,.20,centreX,1.90,.039,'suekit','#e7dac1','#91474c',{parent:door});
-    L(.30,.11,centreX,1.68,.041,'TOOLS & REPAIR','#e8dbc4','#745e53',{parent:door});
+    L(.28,.20,centreX,1.90,.039,'OUGAONE','#e7dac1','#91474c',{parent:door});
+    L(.30,.11,centreX,1.68,.041,'BUILD & SHIP','#e8dbc4','#745e53',{parent:door});
     for(const y of [.92,1.60,2.28])C(.026,.026,.112,hingeX,y,.806,hingeBrass,10,true);
   }
   for(const x of [-.818,.608])B(.054,1.95,.079,x,1.60,.79,bronze);
@@ -159,20 +159,20 @@ export function buildHardware(ctx){
     B(.07,.25,.04,x,2.58,.817,awningMetal,false,awningGroup);
   }
 
-  // All brand faces use the same lowercase suekit wordmark.
+  // All brand faces use the same lowercase OUGAONE wordmark.
   const signBox=B(2.80,.66,.18,awning.x,3.205,.893,emissive('#eee0c6',.16));
   const signPanel=P(2.67,.56,awning.x,3.205,.989,(c,W,H)=>{
     c.fillStyle='#f0e3cc';c.fillRect(0,0,W,H);c.strokeStyle='#934750';c.lineWidth=H*.055;c.strokeRect(H*.035,H*.035,W-H*.07,H-H*.07);
-    c.fillStyle='#97464d';c.textAlign='center';c.textBaseline='middle';c.font=`800 ${H*.78}px Arial,sans-serif`;c.fillText('suekit',W/2,H*.50);
+    c.fillStyle='#97464d';c.textAlign='center';c.textBaseline='middle';c.font=`800 ${H*.78}px Arial,sans-serif`;c.fillText('OUGAONE',W/2,H*.50);
   });
   // Perpendicular little bracket sign mirrors the reference's vertical lightbox.
   B(.36,.105,.16,-3.87,4.76,.66,bronze);B(.36,.105,.16,-3.87,3.66,.66,bronze);
   B(.49,1.17,.15,-4.00,4.19,.78,bronze);
   B(.39,1.03,.10,-4.00,4.19,.821,emissive('#edddbf',.30),false);
   P(.37,.99,-4.00,4.19,.878,(c,W,H)=>{
-    c.fillStyle='#ede0c4';c.fillRect(0,0,W,H);c.fillStyle='#95454c';c.textAlign='center';c.textBaseline='middle';c.save();c.translate(W/2,H/2);c.rotate(-Math.PI/2);c.font=`800 ${W*.62}px Arial,sans-serif`;c.fillText('suekit',0,0);c.restore();
+    c.fillStyle='#ede0c4';c.fillRect(0,0,W,H);c.fillStyle='#95454c';c.textAlign='center';c.textBaseline='middle';c.save();c.translate(W/2,H/2);c.rotate(-Math.PI/2);c.font=`800 ${W*.62}px Arial,sans-serif`;c.fillText('OUGAONE',0,0);c.restore();
   });
-  L(1.05,.29,1.746,2.91,-2.11,'suekit','#ddc9ac','#893f48',{rotY:Math.PI/2});
+  L(1.05,.29,1.746,2.91,-2.11,'OUGAONE','#ddc9ac','#893f48',{rotY:Math.PI/2});
 
   // Hardware stock uses real silhouettes, repeated small packages are instanced.
   const matrices=new Map(),instances=[];
@@ -215,7 +215,7 @@ export function buildHardware(ctx){
   }
   for(let i=0;i<8;i++){
     const m=mat(['#b69b70','#8d9c93','#b47a67','#aeb4a5'][i%4]);stock(.22,.27,.13,-3.44+i*.29,1.18,-.56,m);
-    L(.19,.087,-3.44+i*.29,1.16,-.483,'suekit','#eee1c6','#6d5751');
+    L(.19,.087,-3.44+i*.29,1.16,-.483,'OUGAONE','#eee1c6','#6d5751');
   }
   B(2.46,.08,.49,-2.37,.965,-.47,shelf);
   B(2.45,.45,.06,-2.37,0.70,-.66,shelf,false);
@@ -252,7 +252,7 @@ export function buildHardware(ctx){
   for(const z of [-.92,-.42,.07])B(.016,.49,.36,1.238,.95,z,mat('#937c62'),false);
   for(const z of [-.86,-.36,.14])B(.032,.052,.12,1.266,1.06,z,bronze,false);
   B(.28,.14,.29,.85,1.472,.09,dark);const register=B(.31,.25,.058,.87,1.642,.02,bronze);register.rotation.x=-.20;
-  const screen=P(.23,.14,.87,1.65,.058,(c,W,H)=>{c.fillStyle='#9cab91';c.fillRect(0,0,W,H);c.fillStyle='#425146';c.font=`700 ${H*.33}px monospace`;c.fillText('suekit',W*.09,H*.42);c.fillRect(W*.10,H*.64,W*.76,H*.06);});screen.rotation.x=-.20;
+  const screen=P(.23,.14,.87,1.65,.058,(c,W,H)=>{c.fillStyle='#9cab91';c.fillRect(0,0,W,H);c.fillStyle='#425146';c.font=`700 ${H*.33}px monospace`;c.fillText('OUGAONE',W*.09,H*.42);c.fillRect(W*.10,H*.64,W*.76,H*.06);});screen.rotation.x=-.20;
   B(.22,.11,.21,.76,1.48,-.64,steel);B(.08,.27,.12,.79,1.60,-.71,metal,false);
   B(.13,.085,.06,.94,1.58,-.65,bronze,false);T([[.72,1.54,-.65],[.71,1.70,-.65],[.89,1.70,-.65]],.023,steel);
   hammer(.46,1.444,-.70,.48,Math.PI/2);wrench(.63,1.448,-.33,.51,Math.PI/2);
@@ -265,7 +265,7 @@ export function buildHardware(ctx){
   B(.81,1.69,.075,-.03,1.44,-3.40,mat('#857b69'));
   for(const x of [-.46,.40])B(.052,1.80,.061,x,1.44,-3.40,bronze,false);
   B(.05,.15,.036,.26,1.39,-3.365,steel,false);
-  L(.38,.13,-.03,2.09,-3.36,'WORKSHOP','#d8c6a6','#756254');
+  L(.38,.13,-.03,2.09,-3.36,'PROJECT LAB','#d8c6a6','#756254');
   // Fine tiled floor guide line leads to the counter.
   for(let x=-3.55;x<1.40;x+=.50)B(.014,.006,3.78,x,.574,-1.40,mat('#a89d87'),false);
   for(let z=-3.29;z<.47;z+=.50)B(5.13,.006,.014,-1.10,.574,z,mat('#a89d87'),false);
@@ -290,7 +290,7 @@ export function buildHardware(ctx){
   B(1.52,.07,.67,.69,3.82,-1.52,wood);for(const z of [-1.76,-1.27])B(.07,.68,.07,1.27,3.43,z,bronze,false);
   B(.44,.20,.31,.68,3.965,-1.52,mat('#9b7862'));B(.14,.04,.05,.68,4.084,-1.52,bronze,false);
   ring(.99,4.04,-1.63,.13,.023,mat('#776b52'));ring(.99,4.04,-1.63,.10,.020,mat('#776b52'));
-  L(.72,.40,-.18,4.42,-3.40,'suekit\nREPAIR WORKSHOP','#d8c3a1','#93544a');
+  L(.72,.40,-.18,4.42,-3.40,'OUGAONE\nPROJECT LAB','#d8c3a1','#93544a');
 
   // Ceiling fixture meshes and all artificial emission are returned for time switching.
   const warmLamp=emissive('#ffe0a4',1.15);
@@ -307,7 +307,7 @@ export function buildHardware(ctx){
   for(const x of [-3.13,-2.01])B(.06,1.84,.04,x,1.49,-3.751,bronze,false);
   B(1.15,.10,.32,-2.57,2.46,-3.77,redShade);
   B(.04,.20,.08,-2.91,1.48,-3.76,steel,false);
-  L(.44,.13,-2.57,2.04,-3.75,'suekit','#d5c5a8','#81464a',{rotY:Math.PI});
+  L(.44,.13,-2.57,2.04,-3.75,'OUGAONE','#d5c5a8','#81464a',{rotY:Math.PI});
   T([[-3.85,5.48,-3.31],[-3.90,5.30,-3.32],[-3.90,.76,-3.32],[-4.02,.51,-3.40]],.035,mat('#827c71'));
   T([[1.66,5.49,-3.30],[1.72,5.33,-3.34],[1.72,.64,-3.34]],.033,mat('#8b8272'));
   B(.085,.55,.41,-3.86,2.17,-2.68,mat('#8d978e'));
@@ -315,11 +315,54 @@ export function buildHardware(ctx){
   T([[-3.91,1.86,-2.67],[-3.93,1.02,-2.67],[-3.93,.70,-2.98]],.017,metal);
   P(.89,.68,-3.826,1.70,-1.57,(c,W,H)=>{
     c.fillStyle='#dac8aa';c.fillRect(0,0,W,H);c.strokeStyle='#867661';c.lineWidth=H*.035;c.strokeRect(0,0,W,H);
-    c.fillStyle='#92464a';c.font=`800 ${H*.17}px Arial`;c.textAlign='center';c.fillText('suekit',W/2,H*.23);
+    c.fillStyle='#92464a';c.font=`800 ${H*.17}px Arial`;c.textAlign='center';c.fillText('OUGAONE',W/2,H*.23);
     for(let i=0;i<3;i++){c.fillStyle=['#b8b695','#bc9277','#9da69d'][i];c.fillRect(W*(.07+i*.31),H*.34,W*.24,H*.55);c.fillStyle='#756853';for(let r=0;r<5;r++)c.fillRect(W*(.09+i*.31),H*(.42+r*.08),W*.19,H*.017);}
   },{rotY:-Math.PI/2});
   for(const batch of matrices.values()){
     const mesh=new THREE.InstancedMesh(batch.geometry,batch.material,batch.list.length);batch.list.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);instances.push(mesh);
   }
-  return {group,lights,glowMaterials,unlitPanels,glassStreakMaterials,doors,lampMeshes,signPanel,signBox,awning,awningGroup,roofTop:5.50,roofBounds:{x:-1.10,z:-1.47,w:5.22,d:4.06}};
+  const growthFloors=[];
+  const featureUpgrades=[];
+  let growthLevel=0;
+  const floorLabels=['PLAN','DESIGN','WEB','API','DATA','TEST','TOOLS','STORAGE','PREVIEW','LAUNCH'];
+  for(let index=0;index<10;index++){
+    const floor=new THREE.Group();floor.name='project-growth-floor-'+(index+1);group.add(floor);
+    const bottom=5.88+index*1.52,top=bottom+1.42;
+    const concrete=mat(index%2?'#c9b9a1':'#d8c8af'),glassGlow=emissive(index%2?'#b6d0c6':'#d8c8a8',.45);
+    B(5.28,.13,4.04,-1.1,bottom,-1.47,concrete,true,floor);
+    B(5.30,.08,4.08,-1.1,top,-1.47,mat('#75695a'),false,floor);
+    for(const x of [-3.68,1.48])B(.13,1.28,.15,x,bottom+.70,.62,bronze,false,floor);
+    for(const x of [-3.68,1.48])B(.13,1.28,.15,x,bottom+.70,-3.55,bronze,false,floor);
+    B(5.16,.10,.15,-1.1,bottom+.10,.62,concrete,false,floor);
+    B(5.16,.10,.15,-1.1,bottom+.10,-3.55,concrete,false,floor);
+    B(.10,.10,4.16,-3.68,bottom+.10,-1.47,concrete,false,floor);
+    B(.10,.10,4.16,1.48,bottom+.10,-1.47,concrete,false,floor);
+    B(.08,1.05,.035,-1.1,bottom+.70,.70,glassGlow,false,floor);
+    B(.08,1.05,.035,-1.1,bottom+.70,-3.62,glassGlow,false,floor);
+    B(.035,1.05,3.95,-3.76,bottom+.70,-1.47,glassGlow,false,floor);
+    B(.035,1.05,3.95,1.56,bottom+.70,-1.47,glassGlow,false,floor);
+    L(1.65,.28,-1.1,bottom+.72,.75,'OUGAONE · '+floorLabels[index],'#eee4d0','#6d493b',{parent:floor});
+    floor.visible=false;growthFloors.push(floor);
+  }
+  function setProgress(value){
+    const progress=Math.max(0,Math.min(100,Number(value)||0));
+    const count=Math.floor(progress/10);
+    growthLevel=count;
+    growthFloors.forEach((floor,index)=>{floor.visible=index<count;});
+    return 5.88+count*1.52;
+  }
+  function setFeatureProgress(value){
+    const count=Math.max(0,Math.floor(Number(value)||0));
+    while(featureUpgrades.length<count){
+      const index=featureUpgrades.length;
+      const ornament=new THREE.Group();
+      const column=index%12,row=Math.floor(index/12);
+      const x=-3.52+column*.44,y=5.97+row*.16;
+      B(.075,.30,.07,x,y,.81,mat('#8b7358'),false,ornament);
+      B(.045,.16,.075,x,y,.858,emissive('#e6c78f',.72),false,ornament);
+      group.add(ornament);featureUpgrades.push(ornament);
+    }
+    featureUpgrades.forEach((ornament,index)=>{ornament.visible=index<count;ornament.position.y=growthLevel*1.52;});
+  }
+  return {group,lights,glowMaterials,unlitPanels,glassStreakMaterials,doors,lampMeshes,signPanel,signBox,awning,awningGroup,roofTop:5.50,roofBounds:{x:-1.10,z:-1.47,w:5.22,d:4.06},setProgress,setFeatureProgress};
 }

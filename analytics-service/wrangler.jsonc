@@ -1,10 +1,17 @@
 {
-  "name": "suekit-analytics",
-  "main": "worker.mjs",
-  "compatibility_date": "2026-10-04",
+  "name": "ougaone-project-progress-data",
+  "main": "project-worker.mjs",
+  "compatibility_date": "2026-10-18",
   "workers_dev": true,
-  "triggers": { "crons": ["0 17 * * *"] },
+  "vars": {
+    "GITHUB_REPOSITORY": "ericlokz/OUGAONE",
+    "PLAN_SOURCE_URL": "https://raw.githubusercontent.com/ericlokz/OUGAONE/main/docs/PLAN.md",
+    "UMAMI_BASE_URL": "",
+    "UMAMI_WEBSITE_ID": "",
+    "PUBLIC_SITE_ORIGIN": "https://ericlokz.github.io"
+  },
+  "triggers": { "crons": ["*/5 * * * *", "0 17 * * *"] },
   "kv_namespaces": [
-    { "binding": "ANALYTICS_CACHE", "id": "86160efd07cf45a9b5ba53467df7574d" }
+    { "binding": "PROJECT_CACHE", "id": "REPLACE_WITH_NEW_KV_NAMESPACE_ID" }
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "plan": null,
+  "code": null,
+  "traffic": null,
+  "errors": {
+    "plan": "计划会在数据服务配置完成后自动同步 OUGAONE 主仓库。",
+    "code": "代码统计数据等待初始化。",
+    "traffic": "Umami 自托管统计尚未配置。"
+  }
+}
