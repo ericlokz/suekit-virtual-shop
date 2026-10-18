@@ -6,22 +6,28 @@
 
 ## NAS 隔离部署
 
-展示站使用独立 Docker Compose 项目，Web 只绑定 NAS loopback，数据 API 只在 Compose 内部网络可见。独立 FRP sidecar 通过同一 Compose 私有网络访问 Web；公开访问由主站 Caddy 仅将 `/growth/` 前缀转发到展示站，主站 `/`、容器、数据库和对象存储保持原样。
+展示站使用独立 Docker Compose 项目，Web 和 Umami 管理端只绑定 NAS loopback，数据 API 与 PostgreSQL 只在 Compose 内部网络可见。独立 FRP sidecar 通过私有网络连接展示站和 Umami；公网只开放展示站页面与 Umami 的统计脚本、数据采集端点。Umami 管理界面需经 NAS 本地或 SSH 隧道访问。
 
-1. GitHub fork 的 `main` 是源码唯一来源。构建师从指定提交检出仓库，在 Linux/amd64 构建并标记 `ougaone-growth-showcase-api:<commit>` 与 `ougaone-growth-showcase-web:<commit>`。
+1. GitHub fork 的 `main` 是源码唯一来源。构建师从指定提交检出仓库，在 Linux/amd64 构建并标记 `ougaone-growth-showcase-api:<commit>`、`ougaone-growth-showcase-web:<commit>`；Umami 镜像基于官方 `v3.4.0` 源码构建，并启用 `/analytics` 子路径。
 2. 将两张镜像传到 NAS 并加载；NAS 只保留 Compose 清单、无密钥的 FRP 客户端模板和权限为 `600` 的运行 `.env`，不存源码副本。
-3. 在 NAS `.env` 中设置 `SHOWCASE_TAG`、未占用的 `SHOWCASE_PORT`、容器可访问的 `PLAN_API_URL`、`FRP_SERVER_ADDR` 和 `FRP_TOKEN`。FRP 令牌应从 NAS 现有 FRP 客户端配置安全复制，只保存在 NAS `.env`；`FRP_REMOTE_PORT` 默认 `13182`，须加入 FRP 服务端允许列表。私有 GitHub 仓库的源码指标需设置只读 `GITHUB_TOKEN`。访问统计配置自托管 Umami 的 `UMAMI_BASE_URL`、`UMAMI_WEBSITE_ID`、`UMAMI_API_KEY` 和前端脚本地址 `UMAMI_SCRIPT_URL`；留空时面板显示待接入。
+3. 在 NAS `.env` 中设置 `SHOWCASE_TAG`、`SHOWCASE_PORT`、`PLAN_API_URL` 和 FRP 参数。FRP 令牌、GitHub 只读令牌及 Umami 数据库密钥都只保存在 NAS `.env`，权限设为 `600`。`FRP_REMOTE_PORT=13182` 和 `FRP_ANALYTICS_REMOTE_PORT=13183` 须加入 FRP 服务端允许列表。Umami PostgreSQL 使用 Compose 持久卷；Umami 编译时以 `/analytics` 为 `BASE_PATH`，公网路径为 `/growth/analytics/`。初次安装后应立即更改默认管理员密码，再创建展示站网站与 API Key，并填入 `UMAMI_WEBSITE_ID`、`UMAMI_API_KEY`。前端脚本地址为 `https://one.loilok.com/growth/analytics/script.js`。
 4. 从 NAS 运行时目录启动已加载的镜像：
 
    ```sh
    docker-compose --env-file .env -p ougaone-growth-showcase -f compose.nas.yml up -d --no-build
    ```
 
-5. FRP 服务端需将 `13182` 加入 `allowPorts`。在 `one.loilok.com` 的 Caddy 站点块中，将以下规则放在兜底 `handle` 之前：
+5. FRP 服务端需将 `13182`、`13183` 加入 `allowPorts`。在 `one.loilok.com` 的 Caddy 站点块中，将以下路由放在兜底 `handle` 之前。Umami 公网只允许统计脚本与数据采集端点，管理 API 不对访客开放：
 
    ```caddyfile
    @showcaseRoot path /growth
    redir @showcaseRoot /growth/ 308
+
+   @showcaseAnalytics path /growth/analytics/script.js /growth/analytics/api/send
+   handle @showcaseAnalytics {
+       uri strip_prefix /growth
+       reverse_proxy 127.0.0.1:13183
+   }
 
    handle_path /growth/* {
        reverse_proxy 127.0.0.1:13182

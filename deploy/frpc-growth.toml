@@ -14,3 +14,10 @@ type = "tcp"
 localIP = "web"
 localPort = 8080
 remotePort = {{ .Envs.FRP_REMOTE_PORT }}
+
+[[proxies]]
+name = "ougaone-growth-analytics"
+type = "tcp"
+localIP = "umami"
+localPort = 3000
+remotePort = {{ .Envs.FRP_ANALYTICS_REMOTE_PORT }}
