@@ -8,13 +8,13 @@
 
 展示站使用独立 Docker Compose 项目，Web 只绑定 NAS loopback，数据 API 只在 Compose 内部网络可见。它不会改动 OUGAONE 主站的路由、容器、数据库或对象存储。
 
-1. 将仓库复制到 NAS 上独立目录。
-2. 复制 `.env.nas.example` 为 `.env`，填写 `SHOWCASE_PORT` 和 `PLAN_API_URL`。`PLAN_API_URL` 必须是数据容器可访问的 OUGAONE `/api/plan` 地址。
-3. 私有 GitHub 仓库的源码指标需设置只读 `GITHUB_TOKEN`。访问统计配置自托管 Umami 的 `UMAMI_BASE_URL`、`UMAMI_WEBSITE_ID`、`UMAMI_API_KEY` 和前端脚本地址 `UMAMI_SCRIPT_URL`；留空时页面显示待接入。
-4. 在隔离目录启动：
+1. GitHub fork 的 `main` 是源码唯一来源。构建师从指定提交检出仓库，在 Linux/amd64 构建并标记 `ougaone-growth-showcase-api:<commit>` 与 `ougaone-growth-showcase-web:<commit>`。
+2. 将两张镜像传到 NAS 并加载；NAS 只保留 Compose 清单和权限为 `600` 的运行 `.env`，不存源码副本。
+3. 在 NAS `.env` 中设置 `SHOWCASE_TAG`、未占用的 `SHOWCASE_PORT` 和容器可访问的 `PLAN_API_URL`。私有 GitHub 仓库的源码指标需设置只读 `GITHUB_TOKEN`。访问统计配置自托管 Umami 的 `UMAMI_BASE_URL`、`UMAMI_WEBSITE_ID`、`UMAMI_API_KEY` 和前端脚本地址 `UMAMI_SCRIPT_URL`；留空时面板显示待接入。
+4. 从 NAS 运行时目录启动已加载的镜像：
 
    ```sh
-   docker compose -p ougaone-growth-showcase -f compose.nas.yml up --build -d
+   docker-compose --env-file .env -p ougaone-growth-showcase -f compose.nas.yml up -d --no-build
    ```
 
 页面端口绑定到 loopback，建议通过授权的 SSH tunnel 访问。确认访问控制、目录、端口及回滚策略后，才将它公开给访客。
