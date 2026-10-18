@@ -106,7 +106,9 @@ export function mountMetricsPanel(root, initialData = {}) {
   root.classList.add('metrics-panel');
   root.setAttribute('aria-label', 'OUGAONE 项目进度');
   const planUI = { open: false, query: '', status: '全部' };
+  let currentData=initialData;
   function render(data) {
+    currentData=data;
     root.replaceChildren();
     const header = el('header', 'project-header');
     header.append(el('p', 'project-eyebrow', 'OUGAONE · PROJECT LOG'), el('h2', '', '从计划到产品'), el('p', 'project-intro', '记录每一步真实发生的变化。计划进度会自动同步主仓库。'));
@@ -176,5 +178,13 @@ export function mountMetricsPanel(root, initialData = {}) {
     root.append(footer);
   }
   render(initialData);
-  return { update: render };
+  function focusPlanStatus(){
+    planUI.open=true;planUI.query='';planUI.status='进行中';
+    render(currentData);
+    requestAnimationFrame(()=>{
+      root.querySelector('.project-plan-details')?.scrollIntoView({behavior:'smooth',block:'start'});
+      root.querySelector('.project-plan-filter')?.focus({preventScroll:true});
+    });
+  }
+  return { update: render, focusPlanStatus };
 }

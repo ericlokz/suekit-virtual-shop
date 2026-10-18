@@ -271,7 +271,7 @@ export function buildStreet(ctx) {
       c.fillText(title,w*.075,y+h*.151);
     });
     c.fillStyle='#546d5c';c.font=`${h*.038}px sans-serif`;
-    c.fillText('同步自 OUGAONE 计划页',w*.07,h*.96);
+    c.fillText('点击查看计划状态',w*.07,h*.96);
   };
   const notice=panel(.57,.67,boardX,1.09,boardZ+.041,(c,w,h)=>drawTasks(c,w,h));
   function setActiveTasks(tasks){
@@ -283,5 +283,6 @@ export function buildStreet(ctx) {
   box(.73,.07,.22,boardX,1.515,boardZ,metal,true);
   groundBoard();
 
-  return { signalMaterials, lampLight, setActiveTasks };
+  notice.userData.interactive='plan-status';
+  return { signalMaterials, lampLight, noticeBoard:notice, setActiveTasks };
 }
