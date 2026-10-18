@@ -1,6 +1,8 @@
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const number = new Intl.NumberFormat('zh-CN');
 const statuses = [['completed', '已完成'], ['inProgress', '进行中'], ['awaitingReview', '待验收'], ['blocked', '阻塞'], ['notStarted', '待开始']];
+const planStatuses = [['完成', '已完成'], ['进行中', '进行中'], ['待验收', '待验收'], ['阻塞', '阻塞'], ['待开始', '待开始']];
+const statusClass = { 完成: 'status-complete', 进行中: 'status-progress', 待验收: 'status-review', 阻塞: 'status-blocked', 待开始: 'status-pending' };
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -30,9 +32,80 @@ function chart(rows, key, label) {
   const box = el('div', 'project-chart'); box.append(svg, copy); return box;
 }
 
+function taskDetails(task, candidate = false) {
+  const item = el('details', 'project-plan-task');
+  const summary = el('summary', 'project-plan-task-summary');
+  summary.append(el('code', '', task.id), el('span', `project-plan-status ${statusClass[task.status] || 'status-pending'}`, task.status), el('span', 'project-plan-task-title', task.title));
+  item.append(summary);
+  if (candidate) item.append(el('p', 'project-plan-question', task.question));
+  else {
+    const details = el('dl', 'project-plan-task-details');
+    for (const [label, value] of [['依赖', task.dependencies || '无'], ['通过条件', task.acceptance || '—']]) {
+      const row = el('div'); row.append(el('dt', '', label), el('dd', '', value)); details.append(row);
+    }
+    item.append(details);
+  }
+  return item;
+}
+
+function planDetails(plan, state) {
+  const groups = (plan.groups || []).filter((group) => Array.isArray(group.tasks));
+  const tasks = groups.flatMap((group) => group.tasks);
+  const candidates = Array.isArray(plan.candidates) ? plan.candidates : [];
+  const wrapper = el('details', 'project-plan-details');
+  wrapper.open = state.open;
+  wrapper.addEventListener('toggle', () => { state.open = wrapper.open; });
+  wrapper.append(el('summary', 'project-plan-toggle', `查看完整计划 · ${number.format(tasks.length)} 项任务 · ${number.format(candidates.length)} 项待确认能力`));
+  const controls = el('div', 'project-plan-controls');
+  const search = el('input', 'project-plan-search');
+  search.type = 'search'; search.placeholder = '搜索计划任务、依赖或验收条件'; search.setAttribute('aria-label', '搜索计划任务或候选能力'); search.value = state.query;
+  const filter = el('select', 'project-plan-filter'); filter.setAttribute('aria-label', '按状态筛选计划任务');
+  for (const [value, label] of [['全部', '全部状态'], ...planStatuses]) {
+    const option = el('option', '', label); option.value = value; filter.append(option);
+  }
+  filter.value = state.status;
+  controls.append(search, filter);
+  const count = el('p', 'project-plan-result-count');
+  const results = el('div', 'project-plan-results');
+  function renderResults() {
+    state.query = search.value; state.status = filter.value;
+    const term = state.query.trim().toLocaleLowerCase('zh-CN');
+    const match = (item) => (state.status === '全部' || item.status === state.status) && (!term || [item.id, item.title, item.status, item.dependencies, item.acceptance, item.question].some((value) => value?.toLocaleLowerCase('zh-CN').includes(term)));
+    const visibleTaskCount = groups.reduce((sum, group) => sum + group.tasks.filter(match).length, 0);
+    const visibleCandidates = candidates.filter(match);
+    count.textContent = `显示 ${number.format(visibleTaskCount)} / ${number.format(tasks.length)} 项任务 · ${number.format(visibleCandidates.length)} / ${number.format(candidates.length)} 项候选能力`;
+    results.replaceChildren();
+    for (const group of groups) {
+      const visible = group.tasks.filter(match);
+      if (!visible.length) continue;
+      const section = el('section', 'project-plan-group');
+      const heading = el('div', 'project-plan-group-heading');
+      heading.append(el('h4', '', group.title), el('span', '', `${number.format(visible.length)} / ${number.format(group.tasks.length)} 项`));
+      section.append(heading);
+      for (const task of visible) section.append(taskDetails(task));
+      results.append(section);
+    }
+    if (visibleCandidates.length) {
+      const section = el('section', 'project-plan-group project-plan-candidates');
+      const heading = el('div', 'project-plan-group-heading');
+      heading.append(el('h4', '', '待确认范围'), el('span', '', `${number.format(visibleCandidates.length)} 项 · 不计入正式任务进度`));
+      section.append(heading);
+      for (const candidate of visibleCandidates) section.append(taskDetails(candidate, true));
+      results.append(section);
+    }
+    if (!visibleTaskCount && !visibleCandidates.length) results.append(el('p', 'project-empty', '没有匹配的计划内容，请调整关键词或状态。'));
+    if (!tasks.length && !candidates.length) results.append(el('p', 'project-empty', '计划接口未提供任务明细。'));
+  }
+  search.addEventListener('input', renderResults); filter.addEventListener('change', renderResults);
+  wrapper.append(controls, count, results);
+  renderResults();
+  return wrapper;
+}
+
 export function mountMetricsPanel(root, initialData = {}) {
   root.classList.add('metrics-panel');
   root.setAttribute('aria-label', 'OUGAONE 项目进度');
+  const planUI = { open: false, query: '', status: '全部' };
   function render(data) {
     root.replaceChildren();
     const header = el('header', 'project-header');
@@ -64,6 +137,12 @@ export function mountMetricsPanel(root, initialData = {}) {
       section.append(el('p', 'project-note', '待确认能力 ' + number.format(data.plan.candidateCount || 0) + ' 项；计划任务每完成 10% 增加一层，已交付功能逐项点亮建筑。'));
       section.append(el('p', 'project-note', '计划任务状态不等同于业务上线状态。'));
       root.append(section);
+      if (data.plan.nextAction) {
+        const next = el('section', 'project-next-action');
+        next.append(el('span', 'project-next-label', '当前下一步'), el('p', '', data.plan.nextAction));
+        root.append(next);
+      }
+      root.append(planDetails(data.plan, planUI));
     }
 
     const code = data.code;

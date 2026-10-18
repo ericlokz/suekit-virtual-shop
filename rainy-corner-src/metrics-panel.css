@@ -39,3 +39,34 @@
 .project-footer a:hover { text-decoration: underline; }
 .project-footer a:focus-visible { outline: 2px solid var(--mp-accent); outline-offset: 3px; }
 @media (max-width: 410px) { .metrics-panel { padding: 20px 16px 16px; } .project-stat { padding: 11px 8px; } .metrics-panel .project-stat-value { font-size: 21px; } .project-stats--compact .project-stat-value { font-size: 17px; } }
+.project-next-action { margin-top: 14px; padding: 13px 14px; border: 1px solid var(--mp-line); border-left: 3px solid var(--mp-accent); border-radius: 9px; background: var(--mp-card); }
+.project-next-label { display: block; margin-bottom: 6px; color: var(--mp-accent); font-size: 10px; font-weight: 700; }
+.project-next-action p { color: var(--mp-ink); font-size: 11px; line-height: 1.7; }
+.project-plan-details { margin-top: 12px; border: 1px solid var(--mp-line); border-radius: 10px; background: var(--mp-card); overflow: hidden; }
+.project-plan-toggle { cursor: pointer; padding: 12px 14px; color: var(--mp-accent); font-size: 11px; font-weight: 650; }
+.project-plan-toggle:focus-visible, .project-plan-task-summary:focus-visible { outline: 2px solid var(--mp-accent); outline-offset: -2px; }
+.project-plan-controls { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 8px; padding: 0 12px 10px; }
+.project-plan-controls input, .project-plan-controls select { min-width: 0; height: 34px; padding: 0 9px; border: 1px solid var(--mp-line); border-radius: 7px; background: var(--mp-paper); color: var(--mp-ink); font: inherit; font-size: 10px; }
+.project-plan-controls input:focus-visible, .project-plan-controls select:focus-visible { outline: 2px solid var(--mp-accent); outline-offset: 1px; }
+.project-plan-result-count { padding: 0 12px 8px; color: var(--mp-faint); font-size: 9px; }
+.project-plan-results { padding: 0 12px 12px; }
+.project-plan-group + .project-plan-group { margin-top: 12px; }
+.project-plan-group-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 4px 0 6px; }
+.project-plan-group-heading h4 { color: var(--mp-muted); font-size: 10px; font-weight: 700; }
+.project-plan-group-heading span { color: var(--mp-faint); font-size: 9px; }
+.project-plan-task { border-top: 1px solid var(--mp-line); }
+.project-plan-task-summary { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: start; gap: 7px; cursor: pointer; padding: 9px 2px; list-style-position: inside; }
+.project-plan-task-summary code { color: var(--mp-accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 650; white-space: nowrap; }
+.project-plan-task-title { min-width: 0; color: var(--mp-ink); font-size: 10px; line-height: 1.55; }
+.project-plan-status { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 6px; font-size: 8px; line-height: 1.4; white-space: nowrap; }
+.status-complete { color: #326646; background: #e5efe4; }
+.status-progress { color: #835a24; background: #f5ebd8; }
+.status-review { color: #7b4b87; background: #f1e7f3; }
+.status-blocked { color: #9d4037; background: #f7e5e0; }
+.status-pending { color: var(--mp-muted); background: #eeeae2; }
+.project-plan-task-details { display: grid; gap: 8px; padding: 0 4px 11px 21px; }
+.project-plan-task-details div { display: grid; gap: 3px; }
+.project-plan-task-details dt { color: var(--mp-faint); font-size: 9px; font-weight: 650; }
+.project-plan-task-details dd, .project-plan-question { margin: 0; color: var(--mp-muted); font-size: 10px; line-height: 1.65; overflow-wrap: anywhere; }
+.project-plan-question { padding: 0 4px 11px 21px; }
+@media (max-width: 410px) { .project-plan-controls { grid-template-columns: minmax(0, 1fr) 105px; gap: 6px; } .project-plan-task-summary { gap: 5px; } }
