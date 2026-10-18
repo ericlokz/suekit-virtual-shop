@@ -49,6 +49,7 @@ services:
       FRP_REMOTE_PORT: ${FRP_REMOTE_PORT:-13182}
     volumes:
       - ./deploy/frpc-growth.toml:/etc/frp/frpc.toml:ro
+      - /volume1/docker/ougaone-frpc/server.crt:/etc/frp/server.crt:ro
     depends_on:
       web:
         condition: service_healthy
